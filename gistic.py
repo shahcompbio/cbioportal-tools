@@ -37,7 +37,23 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 	gtf_file = open(gtf, 'r')
 	gtf_reader = csv.reader(gtf_file, delimiter='\t')
 	gtf_dict = {}
-	# TODO: extract relevant gene start and end information
+	ensembl_set = set()
+	for gtf_line in gtf_reader:
+		ensembl_id = re.findall(r'ENSG\d+', gtf_line[-1])[0]
+		ensembl_set.add(ensembl_id)
+
+	gtf_file.seek(0)
+	for ensembl_id in ensembl_set:
+		gtf_dict[ensembl_id] = [[], []]
+
+	for gtf_line in gtf_reader:
+		ensembl_id = re.findall(r'ENSG\d+', gtf_line[-1])[0]
+		gtf_dict[ensembl_id][0].append(gtf_line[3])
+		gtf_dict[ensembl_id][1].append(gtf_line[4])
+
+	for ensembl_id in gtf_dict:
+		gtf_dict[ensembl_id][0] = min(gtf_dict[ensembl_id][0])
+		gtf_dict[ensembl_id][1] = max(gtf_dict[ensembl_id][1])
 
 	for igv_line, titan_line in zip(igv_reader, titan_reader):
 		ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
@@ -49,8 +65,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 				extract_file.write(non_ensembl_info + '\t' + ensembl_id)
 				if ensembl_id in hgnc_dict:
 					extract_file.write('\t' + hgnc_dict[ensembl_id][0] + '\t' + hgnc_dict[ensembl_id][1])
-				# if ensembl_id in gtf_dict:
-				# 	extract_file.write('\t' + gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
+				if ensembl_id in gtf_dict:
+					extract_file.write('\t' + gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
 
 				extract_file.write('\n')
 
