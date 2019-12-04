@@ -32,6 +32,13 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 		if len(hgnc_line) == 3:
 			hgnc_dict[hgnc_line[2]] = (hgnc_line[0], hgnc_line[1])
 	
+	# use Homo_sapiens.GRCh37.73.gtf.txt columns 4 and 5
+	# (gene start and end), for associated gene_id
+	gtf_file = open(gtf, 'r')
+	gtf_reader = csv.reader(gtf_file, delimiter='\t')
+	gtf_dict = {}
+	# TODO: extract relevant gene start and end information
+
 	for igv_line, titan_line in zip(igv_reader, titan_reader):
 		ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
 		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[6] + '\t' + titan_line[7] + '\t' + igv_line[4]
@@ -42,6 +49,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 				extract_file.write(non_ensembl_info + '\t' + ensembl_id)
 				if ensembl_id in hgnc_dict:
 					extract_file.write('\t' + hgnc_dict[ensembl_id][0] + '\t' + hgnc_dict[ensembl_id][1])
+				# if ensembl_id in gtf_dict:
+				# 	extract_file.write('\t' + gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
 
 				extract_file.write('\n')
 
@@ -51,9 +60,6 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
 def transform():
 	# perform weighted averge calculations and required transformations
-
-	# use Homo_sapiens.GRCh37.73.gtf.txt columns 4 and 5
-	# (gene start and end), for associated gene_id
 	pass
 
 
