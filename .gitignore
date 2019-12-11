@@ -1,4 +1,5 @@
 .DS_Store
+extract.txt
 notes.txt
-input/
+Homo_sapiens.GRCh37.73.gtf
 venv/
