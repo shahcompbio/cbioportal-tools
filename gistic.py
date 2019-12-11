@@ -6,8 +6,8 @@ import re
 # files need to live in the same directory as script, arg mus be full filename
 def extract(gtf, hgnc, igv_segs, titan_segs):
 	# extract required information from input files, place in single file
-	extract_file = open("extract.txt","w+")
-	extract_file.write("chr\tseg_start\tseg_end\tmedian_logr\ttitan_state\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n")
+	extracted_file = open('extract.txt','w+')
+	extracted_file.write('chr\tseg_start\tseg_end\tseg_median_logr\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
 	
 	# from igv_segs.txt:
 	# num.mark
@@ -57,21 +57,25 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
 	for igv_line, titan_line in zip(igv_reader, titan_reader):
 		ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
-		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[6] + '\t' + titan_line[7] + '\t' + igv_line[4]
+		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[6] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
 		if not ensembl_ids:
-			extract_file.write(non_ensembl_info + '\n')
+			extracted_file.write(non_ensembl_info + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\n')
 		else:
 			for ensembl_id in ensembl_ids:
-				extract_file.write(non_ensembl_info + '\t' + ensembl_id)
+				extracted_file.write(non_ensembl_info + '\t' + ensembl_id + '\t')
 				if ensembl_id in hgnc_dict:
-					extract_file.write('\t' + hgnc_dict[ensembl_id][0] + '\t' + hgnc_dict[ensembl_id][1])
+					extracted_file.write(hgnc_dict[ensembl_id][0] + '\t' + hgnc_dict[ensembl_id][1] + '\t')
+				else:
+					extracted_file.write('' + '\t' + '' + '\t')
+				
 				if ensembl_id in gtf_dict:
-					extract_file.write('\t' + gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
+					extracted_file.write(gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
+				else:
+					extracted_file.write('' + '\t' + '')
 
-				extract_file.write('\n')
+				extracted_file.write('\n')
 
-	extract_file.close()
-	return extract_file
+	extracted_file.close() 
 
 
 def transform():
@@ -91,9 +95,9 @@ def load():
 @click.argument('titan_segs')
 @click.argument('sample_id')
 def main(gtf, hgnc, igv_segs, titan_segs, sample_id):
-    files = extract(gtf, hgnc, igv_segs, titan_segs)
-    transform()
-    load()
+    extract(gtf, hgnc, igv_segs, titan_segs)
+    log_dict = transform()
+    load(log_dict)
 
 
 if __name__ == '__main__':
