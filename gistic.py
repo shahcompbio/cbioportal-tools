@@ -46,11 +46,13 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 	for ensembl_id in ensembl_set:
 		gtf_dict[ensembl_id] = [[], []]
 
+	# find all start and end points for each particular gene
 	for gtf_line in gtf_reader:
 		ensembl_id = re.findall(r'ENSG\d+', gtf_line[-1])[0]
 		gtf_dict[ensembl_id][0].append(gtf_line[3])
 		gtf_dict[ensembl_id][1].append(gtf_line[4])
 
+	# consolidate sections by taking one start and one end coordinate
 	for ensembl_id in gtf_dict:
 		gtf_dict[ensembl_id][0] = min(gtf_dict[ensembl_id][0])
 		gtf_dict[ensembl_id][1] = max(gtf_dict[ensembl_id][1])
@@ -80,6 +82,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
 def transform():
 	# perform weighted averge calculations and required transformations
+	# seg_dict will store information for calculations
+	# log_dict will store ensembl_id: median_logr key-value pairs
 	seg_dict, log_dict = {}, {}
 	extracted_file = open('extract.txt','r')
 	next(extracted_file)
@@ -91,6 +95,11 @@ def transform():
 				# map median_logR to ensembl_id
 				log_dict[line[7]] = line[3]
 			else:
+				# else, setup a key-value pair where the key is
+				# an ensembl id and the value is a list containing
+				# the associated segment start points, end points,
+				# median log values, gene start points, and
+				# gene end points
 				if line[7] not in seg_dict:
 					seg_dict[line[7]] = [[], [], [], 0, 0]
 				
@@ -101,9 +110,11 @@ def transform():
 				seg_dict[line[7]][4] = int(line[11])
 	
 	for ensembl_id in seg_dict:
+		# find start and end points for all the segments gene is in
 		seg_starts = sorted([start for start in seg_dict[ensembl_id][0]])
 		seg_ends = sorted([end for end in seg_dict[ensembl_id][1]])
 		segs_to_remove = []
+		# check if segment has a length of 0
 		for seg_start, seg_end in zip(seg_starts, seg_ends):
 			if seg_start == seg_end:
 				segs_to_remove.append(seg_start)
@@ -111,12 +122,16 @@ def transform():
 		for seg in segs_to_remove:
 			seg_starts.remove(seg), seg_ends.remove(seg)
 		
+		# if ensembl_id gene is only present in one segment, add to
+		# log_dict. If it is in a 0-length segment, and thus
+		# seg_starts and seg_ends are empty, move to next ensembl_id  
 		if len(seg_starts) <= 1:
 			if len(seg_starts) == 1:
 				log_dict[ensembl_id] = seg_dict[ensembl_id][2][0]
 			
 			continue
 
+		# find/calculate other information required
 		seg_logs = [log for log in seg_dict[ensembl_id][2]]
 		gene_start = seg_dict[ensembl_id][3]
 		gene_end = seg_dict[ensembl_id][4]
@@ -124,11 +139,11 @@ def transform():
 		denominator_end = ((max(seg_ends) - max(seg_starts)) - (max(seg_ends) - gene_end)) / (max(seg_ends) - max(seg_starts))
 		numerator_start = denominator_start * seg_logs[seg_starts.index(min(seg_starts))] 
 		numerator_end = denominator_end * seg_logs[seg_starts.index(max(seg_starts))]
-		# TODO: drop mins and maxes, calculate rest of segs
+		# TODO: drop mins and maxes to get rest of num/denom
+		# finish weighted average calculation
 		numerator_rest = 0
 		denominator_rest = 0				
 
-	print(seg_dict)
 	return log_dict
 
 
