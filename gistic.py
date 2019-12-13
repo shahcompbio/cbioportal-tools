@@ -111,15 +111,19 @@ def transform():
 	
 	for ensembl_id in seg_dict:
 		# find start and end points for all the segments gene is in
-		seg_starts = sorted([start for start in seg_dict[ensembl_id][0]])
-		seg_ends = sorted([end for end in seg_dict[ensembl_id][1]])
+		seg_starts = [start for start in seg_dict[ensembl_id][0]]
+		seg_ends = [end for end in seg_dict[ensembl_id][1]]
+		seg_logs = [log for log in seg_dict[ensembl_id][2]]
 		segs_to_remove = []
+		
 		# check if segment has a length of 0
 		for seg_start, seg_end in zip(seg_starts, seg_ends):
 			if seg_start == seg_end:
 				segs_to_remove.append(seg_start)
 		
+		# if it does, remove it
 		for seg in segs_to_remove:
+			del seg_logs[seg_starts.index(seg)]
 			seg_starts.remove(seg), seg_ends.remove(seg)
 		
 		# if ensembl_id gene is only present in one segment, add to
@@ -131,18 +135,27 @@ def transform():
 			
 			continue
 
-		# find/calculate other information required
-		seg_logs = [log for log in seg_dict[ensembl_id][2]]
+		# find/calculate other required information
 		gene_start = seg_dict[ensembl_id][3]
 		gene_end = seg_dict[ensembl_id][4]
+		
 		denominator_start = (min(seg_ends) - gene_start) / (min(seg_ends) - min(seg_starts))
 		denominator_end = ((max(seg_ends) - max(seg_starts)) - (max(seg_ends) - gene_end)) / (max(seg_ends) - max(seg_starts))
 		numerator_start = denominator_start * seg_logs[seg_starts.index(min(seg_starts))] 
 		numerator_end = denominator_end * seg_logs[seg_starts.index(max(seg_starts))]
-		# TODO: drop mins and maxes to get rest of num/denom
-		# finish weighted average calculation
-		numerator_rest = 0
-		denominator_rest = 0				
+		
+		seg_logs_to_remove = [seg_logs[seg_starts.index(min(seg_starts))], seg_logs[seg_starts.index(max(seg_starts))]]
+		for seg_log in seg_logs_to_remove:
+			seg_logs.remove(seg_log)
+		
+		seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
+		seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
+		denominator_rest = 1 * len(seg_starts)
+		numerator_rest = 0	
+		for value in seg_starts:
+			numerator_rest = numerator_rest + seg_logs[seg_starts.index(value)]
+
+		log_dict[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
 
 	return log_dict
 
