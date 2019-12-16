@@ -2,6 +2,8 @@ import click
 import csv
 import re
 
+from scipy.stats import norm
+
 
 # files need to live in the same directory as script, arg mus be full filename
 def extract(gtf, hgnc, igv_segs, titan_segs):
@@ -84,16 +86,21 @@ def transform():
 	# perform weighted averge calculations and required transformations
 	# seg_dict will store information for calculations
 	# log_dict will store ensembl_id: median_logr key-value pairs
-	seg_dict, log_dict = {}, {}
+	seg_dict, log_dict, gene_data, seg_data = {}, {}, {}, {}
+	homd_ids = []
 	extracted_file = open('extract.txt','r')
 	next(extracted_file)
 	file_reader = csv.reader(extracted_file, delimiter='\t')
 	for line in file_reader:
 		if line[7]:
+			# check for homozygous deletion
+			if line[5] == 'HOMD':
+				homd_ids.append(line[7])
+
 			# if seg_start <= gene_start and seg_end >= gene_end
 			if int(line[1]) <= int(line[10]) and int(line[2]) >= int(line[11]):
 				# map median_logR to ensembl_id
-				log_dict[line[7]] = line[3]
+				log_dict[line[7]] = float(line[3])
 			else:
 				# else, setup a key-value pair where the key is
 				# an ensembl id and the value is a list containing
@@ -144,23 +151,32 @@ def transform():
 		numerator_start = denominator_start * seg_logs[seg_starts.index(min(seg_starts))] 
 		numerator_end = denominator_end * seg_logs[seg_starts.index(max(seg_starts))]
 		
+		# remove min and max segment start and end coordinates
+		# this is to easily iterate over remaining segments
 		seg_logs_to_remove = [seg_logs[seg_starts.index(min(seg_starts))], seg_logs[seg_starts.index(max(seg_starts))]]
 		for seg_log in seg_logs_to_remove:
 			seg_logs.remove(seg_log)
 		
 		seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
 		seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
+		
+		# calculate remaining required information
 		denominator_rest = 1 * len(seg_starts)
 		numerator_rest = 0	
 		for value in seg_starts:
 			numerator_rest = numerator_rest + seg_logs[seg_starts.index(value)]
 
+		# perform final weighted average calculation
 		log_dict[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
 
-	return log_dict
+	# create a baseline (mu) for copy number transformation
+	median_logs = [log_dict[key] for key in log_dict]
+	mu, std = norm.fit(median_logs)
+
+	return log_dict, gene_data, seg_data
 
 
-def load(log_dict):
+def load(log_dict, gene_data, seg_data, sample_id):
 	# split generated file into the four outputs
 	pass
 
@@ -173,8 +189,8 @@ def load(log_dict):
 @click.argument('sample_id')
 def main(gtf, hgnc, igv_segs, titan_segs, sample_id):
     extract(gtf, hgnc, igv_segs, titan_segs)
-    log_dict = transform()
-    load(log_dict)
+    log_dict, gene_data, seg_data = transform()
+    load(log_dict, gene_data, seg_data, sample_id)
 
 
 if __name__ == '__main__':
