@@ -9,7 +9,7 @@ from scipy.stats import norm
 def extract(gtf, hgnc, igv_segs, titan_segs):
 	# extract required information from input files, place in single file
 	extracted_file = open('extract.txt','w+')
-	extracted_file.write('chr\tseg_start\tseg_end\tseg_median_logr\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
+	extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
 	
 	# from igv_segs.txt:
 	# num.mark
@@ -18,7 +18,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 	igv_reader = csv.reader(igv_file, delimiter='\t')
 	
 	# from titan_segs.txt:
-	# Chromosome, Start_Position(bp), End_Position(bp), Median_logR,
+	# Chromosome, Start_Position(bp), End_Position(bp), Copy_Number,
 	# TITAN_state, Pygenes(gene_id,gene_name;) (throw away gene_name)
 	titan_file = open(titan_segs, 'r')
 	next(titan_file)
@@ -61,7 +61,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
 	for igv_line, titan_line in zip(igv_reader, titan_reader):
 		ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
-		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[6] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
+		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[9] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
 		if not ensembl_ids:
 			extracted_file.write(non_ensembl_info + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\n')
 		else:
@@ -85,8 +85,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 def transform():
 	# perform weighted averge calculations and required transformations
 	# seg_dict will store information for calculations
-	# log_dict will store ensembl_id: median_logr key-value pairs
-	seg_dict, log_dict, gene_data, seg_data = {}, {}, {}, {}
+	# cn_dict will store ensembl_id: copy_number key-value pairs
+	seg_dict, cn_dict, gene_data, seg_data = {}, {}, {}, {}
 	homd_ids = []
 	extracted_file = open('extract.txt','r')
 	next(extracted_file)
@@ -99,13 +99,13 @@ def transform():
 
 			# if seg_start <= gene_start and seg_end >= gene_end
 			if int(line[1]) <= int(line[10]) and int(line[2]) >= int(line[11]):
-				# map median_logR to ensembl_id
-				log_dict[line[7]] = float(line[3])
+				# map copy_number to ensembl_id
+				cn_dict[line[7]] = float(line[3])
 			else:
 				# else, setup a key-value pair where the key is
 				# an ensembl id and the value is a list containing
 				# the associated segment start points, end points,
-				# median log values, gene start points, and
+				# copy numbers, gene start points, and
 				# gene end points
 				if line[7] not in seg_dict:
 					seg_dict[line[7]] = [[], [], [], 0, 0]
@@ -120,7 +120,7 @@ def transform():
 		# find start and end points for all the segments gene is in
 		seg_starts = [start for start in seg_dict[ensembl_id][0]]
 		seg_ends = [end for end in seg_dict[ensembl_id][1]]
-		seg_logs = [log for log in seg_dict[ensembl_id][2]]
+		copy_numbers = [cn for cn in seg_dict[ensembl_id][2]]
 		segs_to_remove = []
 		
 		# check if segment has a length of 0
@@ -130,15 +130,16 @@ def transform():
 		
 		# if it does, remove it
 		for seg in segs_to_remove:
-			del seg_logs[seg_starts.index(seg)]
+			del copy_numbers[seg_starts.index(seg)]
 			seg_starts.remove(seg), seg_ends.remove(seg)
 		
-		# if ensembl_id gene is only present in one segment, add to
-		# log_dict. If it is in a 0-length segment, and thus
-		# seg_starts and seg_ends are empty, move to next ensembl_id  
+		# if ensembl_id gene is only present in one segment, add
+		# associated copy number to cn_dict. If it is in a 0-length 
+		# segment, and thus seg_starts and seg_ends are empty, move
+		# to next ensembl_id
 		if len(seg_starts) <= 1:
 			if len(seg_starts) == 1:
-				log_dict[ensembl_id] = seg_dict[ensembl_id][2][0]
+				cn_dict[ensembl_id] = seg_dict[ensembl_id][2][0]
 			
 			continue
 
@@ -148,14 +149,14 @@ def transform():
 		
 		denominator_start = (min(seg_ends) - gene_start) / (min(seg_ends) - min(seg_starts))
 		denominator_end = ((max(seg_ends) - max(seg_starts)) - (max(seg_ends) - gene_end)) / (max(seg_ends) - max(seg_starts))
-		numerator_start = denominator_start * seg_logs[seg_starts.index(min(seg_starts))] 
-		numerator_end = denominator_end * seg_logs[seg_starts.index(max(seg_starts))]
+		numerator_start = denominator_start * copy_numbers[seg_starts.index(min(seg_starts))] 
+		numerator_end = denominator_end * copy_numbers[seg_starts.index(max(seg_starts))]
 		
 		# remove min and max segment start and end coordinates
 		# this is to easily iterate over remaining segments
-		seg_logs_to_remove = [seg_logs[seg_starts.index(min(seg_starts))], seg_logs[seg_starts.index(max(seg_starts))]]
-		for seg_log in seg_logs_to_remove:
-			seg_logs.remove(seg_log)
+		cn_to_remove = [copy_numbers[seg_starts.index(min(seg_starts))], copy_numbers[seg_starts.index(max(seg_starts))]]
+		for seg_cn in cn_to_remove:
+			copy_numbers.remove(seg_cn)
 		
 		seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
 		seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
@@ -164,19 +165,44 @@ def transform():
 		denominator_rest = 1 * len(seg_starts)
 		numerator_rest = 0	
 		for value in seg_starts:
-			numerator_rest = numerator_rest + seg_logs[seg_starts.index(value)]
+			numerator_rest = numerator_rest + copy_numbers[seg_starts.index(value)]
 
 		# perform final weighted average calculation
-		log_dict[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
+		cn_dict[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
 
 	# create a baseline (mu) for copy number transformation
-	median_logs = [log_dict[key] for key in log_dict]
-	mu, std = norm.fit(median_logs)
+	copy_numbers = [cn_dict[key] for key in cn_dict]
+	mu, std = norm.fit(copy_numbers)
 
-	return log_dict, gene_data, seg_data
+	# perform required transformations
+	for ensembl_id in cn_dict:
+		cn = cn_dict[ensembl_id]
+		if ensembl_id in homd_ids:
+			seg_data[ensembl_id] = -2
+		elif 0 <= cn <= mu-1:
+			seg_data[ensembl_id] = -1
+		elif mu-1 < cn < mu+1:
+			seg_data[ensembl_id] = 0
+		elif mu+1 <= cn < 6:
+			seg_data[ensembl_id] = 1
+		elif cn >= 6:
+			seg_data[ensembl_id] = 2
+
+		if 0 <= cn < 1:
+			gene_data[ensembl_id] = -2
+		elif 1 <= cn <= mu-1:
+			gene_data[ensembl_id] = -1
+		elif mu-1 < cn < mu+1:
+			gene_data[ensembl_id] = 0
+		elif mu+1 <= cn < 6:
+			gene_data[ensembl_id] = 1
+		elif cn >= 6:
+			gene_data[ensembl_id] = 2
+
+	return cn_dict, gene_data, seg_data
 
 
-def load(log_dict, gene_data, seg_data, sample_id):
+def load(cn_dict, gene_data, seg_data, sample_id):
 	# split generated file into the four outputs
 	pass
 
@@ -189,8 +215,8 @@ def load(log_dict, gene_data, seg_data, sample_id):
 @click.argument('sample_id')
 def main(gtf, hgnc, igv_segs, titan_segs, sample_id):
     extract(gtf, hgnc, igv_segs, titan_segs)
-    log_dict, gene_data, seg_data = transform()
-    load(log_dict, gene_data, seg_data, sample_id)
+    cn_dict, gene_data, seg_data = transform()
+    load(cn_dict, gene_data, seg_data, sample_id)
 
 
 if __name__ == '__main__':
