@@ -82,45 +82,13 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 	extracted_file.close() 
 
 
-def transform():
-	# perform weighted averge calculations and required transformations
-	# seg_dict will store information for calculations
-	# cn_dict will store ensembl_id: copy_number key-value pairs
-	seg_dict, cn_dict, gene_data, seg_data = {}, {}, {}, {}
-	homd_ids = []
-	extracted_file = open('extract.txt','r')
-	next(extracted_file)
-	file_reader = csv.reader(extracted_file, delimiter='\t')
-	for line in file_reader:
-		if line[7]:
-			# check for homozygous deletion
-			if line[5] == 'HOMD':
-				homd_ids.append(line[7])
-
-			# if seg_start <= gene_start and seg_end >= gene_end
-			if int(line[1]) <= int(line[10]) and int(line[2]) >= int(line[11]):
-				# map copy_number to ensembl_id
-				cn_dict[line[7]] = float(line[3])
-			else:
-				# else, setup a key-value pair where the key is
-				# an ensembl id and the value is a list containing
-				# the associated segment start points, end points,
-				# copy numbers, gene start points, and
-				# gene end points
-				if line[7] not in seg_dict:
-					seg_dict[line[7]] = [[], [], [], 0, 0]
-				
-				seg_dict[line[7]][0].append(int(line[1]))
-				seg_dict[line[7]][1].append(int(line[2]))
-				seg_dict[line[7]][2].append(float(line[3]))
-				seg_dict[line[7]][3] = int(line[10])
-				seg_dict[line[7]][4] = int(line[11])
-	
-	for ensembl_id in seg_dict:
+def calculate_weighted_average(ensembl_dict, column_to_use):
+	calculated_values = {}
+	for ensembl_id in ensembl_dict:
 		# find start and end points for all the segments gene is in
-		seg_starts = [start for start in seg_dict[ensembl_id][0]]
-		seg_ends = [end for end in seg_dict[ensembl_id][1]]
-		copy_numbers = [cn for cn in seg_dict[ensembl_id][2]]
+		seg_starts = [start for start in ensembl_dict[ensembl_id][0]]
+		seg_ends = [end for end in ensembl_dict[ensembl_id][1]]
+		values_to_use = [val for val in column_to_use[ensembl_id]]
 		segs_to_remove = []
 		
 		# check if segment has a length of 0
@@ -130,34 +98,34 @@ def transform():
 		
 		# if it does, remove it
 		for seg in segs_to_remove:
-			del copy_numbers[seg_starts.index(seg)]
+			del values_to_use[seg_starts.index(seg)]
 			seg_starts.remove(seg), seg_ends.remove(seg)
 		
 		# if ensembl_id gene is only present in one segment, add
-		# associated copy number to cn_dict. If it is in a 0-length 
+		# associated copy number to calculated_values. If it is in a 0-length 
 		# segment, and thus seg_starts and seg_ends are empty, move
 		# to next ensembl_id
 		if len(seg_starts) <= 1:
 			if len(seg_starts) == 1:
-				cn_dict[ensembl_id] = seg_dict[ensembl_id][2][0]
+				calculated_values[ensembl_id] = values_to_use[0]
 			
 			continue
 
-		# find/calculate other required information
-		gene_start = seg_dict[ensembl_id][3]
-		gene_end = seg_dict[ensembl_id][4]
+		gene_start = ensembl_dict[ensembl_id][4]
+		gene_end = ensembl_dict[ensembl_id][5]
 		
 		denominator_start = (min(seg_ends) - gene_start) / (min(seg_ends) - min(seg_starts))
 		denominator_end = ((max(seg_ends) - max(seg_starts)) - (max(seg_ends) - gene_end)) / (max(seg_ends) - max(seg_starts))
-		numerator_start = denominator_start * copy_numbers[seg_starts.index(min(seg_starts))] 
-		numerator_end = denominator_end * copy_numbers[seg_starts.index(max(seg_starts))]
+		numerator_start = denominator_start * values_to_use[seg_starts.index(min(seg_starts))] 
+		numerator_end = denominator_end * values_to_use[seg_starts.index(max(seg_starts))]
+		
+		# remove calculation values from used segs
+		values_to_remove = [values_to_use[seg_starts.index(min(seg_starts))], values_to_use[seg_starts.index(max(seg_starts))]]
+		for value in values_to_remove:
+			values_to_use.remove(value)
 		
 		# remove min and max segment start and end coordinates
 		# this is to easily iterate over remaining segments
-		cn_to_remove = [copy_numbers[seg_starts.index(min(seg_starts))], copy_numbers[seg_starts.index(max(seg_starts))]]
-		for seg_cn in cn_to_remove:
-			copy_numbers.remove(seg_cn)
-		
 		seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
 		seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
 		
@@ -165,47 +133,116 @@ def transform():
 		denominator_rest = 1 * len(seg_starts)
 		numerator_rest = 0	
 		for value in seg_starts:
-			numerator_rest = numerator_rest + copy_numbers[seg_starts.index(value)]
+			numerator_rest = numerator_rest + values_to_use[seg_starts.index(value)]
 
 		# perform final weighted average calculation
-		cn_dict[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
+		calculated_values[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
 
-	# create a baseline (mu) for copy number transformation
-	copy_numbers = [cn_dict[key] for key in cn_dict]
-	mu, std = norm.fit(copy_numbers)
+	return calculated_values
 
-	# perform required transformations
-	for ensembl_id in cn_dict:
-		cn = cn_dict[ensembl_id]
-		if ensembl_id in homd_ids:
-			seg_data[ensembl_id] = -2
-		elif 0 <= cn <= mu-1:
-			seg_data[ensembl_id] = -1
-		elif mu-1 < cn < mu+1:
-			seg_data[ensembl_id] = 0
-		elif mu+1 <= cn < 6:
-			seg_data[ensembl_id] = 1
-		elif cn >= 6:
-			seg_data[ensembl_id] = 2
 
+def transform():
+	# perform weighted average calculations, and transformations
+	# ensembl_dict will store information for calculations
+	# gene_dict will store information for gene data output
+	# seg_dict will store information for segment data output
+	ensembl_dict, gene_dict, seg_dict  = {}, {}, {}
+	homd_segs = []
+	extracted_file = open('extract.txt','r')
+	next(extracted_file)
+	file_reader = csv.reader(extracted_file, delimiter='\t')
+	for line in file_reader:
+		# if line has an associated ensembl_id
+		if line[7]:
+			# ensembl_id = [entrez_id, hugo_symbol]
+			gene_dict[line[7]] = [line[8], line[9]]
+
+			# set up a key-value pair where the key is
+			# an ensembl id and the value is a list containing
+			# the associated segment start points, end points,
+			# copy numbers, titans_states gene start point, and
+			# gene end point
+			if line[7] not in ensembl_dict:
+				ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
+			
+			ensembl_dict[line[7]][0].append(int(line[1]))
+			ensembl_dict[line[7]][1].append(int(line[2]))
+			ensembl_dict[line[7]][2].append(float(line[3]))
+			ensembl_dict[line[7]][3].append(float(line[4]))
+			ensembl_dict[line[7]][4] = int(line[10])
+			ensembl_dict[line[7]][5] = int(line[11])
+
+		# (seg_start, seg_end) = [chr, num.mark, titan_state, copy_number]
+		seg_dict[(line[1], line[2])] = [line[0], int(line[6]), int(line[4]), int(line[3])]
+		
+		# check for homozygous deletion
+		if line[5] == 'HOMD':
+			homd_segs.append((line[1], line[2]))
+
+	copy_numbers = {}
+	for ensembl_id in ensembl_dict:
+		copy_numbers[ensembl_id] = ensembl_dict[ensembl_id][2]
+
+	calculated_cns = calculate_weighted_average(ensembl_dict, copy_numbers)
+	
+	titan_states = {}
+	for ensembl_id in ensembl_dict:
+		titan_states[ensembl_id] = ensembl_dict[ensembl_id][3]
+
+	calculated_tss = calculate_weighted_average(ensembl_dict, titan_states)
+
+	for ensembl_id in calculated_cns:
+		gene_dict[ensembl_id].append(calculated_cns[ensembl_id])
+		gene_dict[ensembl_id].append(calculated_tss[ensembl_id])
+
+	# create a baseline (mu) for gene copy number transformation
+	calc_cn_list = [calculated_cns[key] for key in calculated_cns]
+	mu, std = norm.fit(calc_cn_list)
+
+	# perform required gene transformations on copy number
+	for ensembl_id in calculated_cns:
+		cn = calculated_cns[ensembl_id]
 		if 0 <= cn < 1:
-			gene_data[ensembl_id] = -2
+			gene_dict[ensembl_id][2] = -2
 		elif 1 <= cn <= mu-1:
-			gene_data[ensembl_id] = -1
+			gene_dict[ensembl_id][2] = -1
 		elif mu-1 < cn < mu+1:
-			gene_data[ensembl_id] = 0
+			gene_dict[ensembl_id][2] = 0
 		elif mu+1 <= cn < 6:
-			gene_data[ensembl_id] = 1
+			gene_dict[ensembl_id][2] = 1
 		elif cn >= 6:
-			gene_data[ensembl_id] = 2
+			gene_dict[ensembl_id][2] = 2
 
-	return cn_dict, gene_data, seg_data
+	# create a baseline (mu) for segment copy number transformation
+	cn_list = [seg_dict[ensembl_id][3] for ensembl_id in seg_dict]
+	mu, std = norm.fit(cn_list)
+
+	# perform required segment transformations on copy number
+	for seg_length in seg_dict:
+		cn = seg_dict[seg_length][3]
+		if seg_length in homd_segs:
+			seg_dict[seg_length][3] = -2
+		elif 0 <= cn <= mu-1:
+			seg_dict[seg_length][3] = -1
+		elif mu-1 < cn < mu+1:
+			seg_dict[seg_length][3] = 0
+		elif mu+1 <= cn < 6:
+			seg_dict[seg_length][3] = 1
+		elif cn >= 6:
+			seg_dict[seg_length][3] = 2
+
+	return gene_dict, seg_dict
 
 
-def load(cn_dict, gene_data, seg_data, sample_id):
+def load(gene_dict, seg_dict, sample_id):
 	# split generated file into the four outputs
-	pass
-
+	gene_header = 'entrez_id\thugo_symbol\t' + sample_id + '\n'
+	segment_header = 'sample_id\tchr\tseg_start\tseg_end\tnum.mark\tseg.mean\n'
+	extracted_file = open('extract.txt','r')
+	next(extracted_file)
+	gistic_gene_data = open('gistic_gene_data.txt','w+')
+	gistic_gene_data.write(gene_header)
+	
 
 @click.command()
 @click.argument('gtf')
@@ -215,8 +252,8 @@ def load(cn_dict, gene_data, seg_data, sample_id):
 @click.argument('sample_id')
 def main(gtf, hgnc, igv_segs, titan_segs, sample_id):
     extract(gtf, hgnc, igv_segs, titan_segs)
-    cn_dict, gene_data, seg_data = transform()
-    load(cn_dict, gene_data, seg_data, sample_id)
+    gene_dict, seg_dict = transform()
+    load(gene_dict, seg_dict, sample_id)
 
 
 if __name__ == '__main__':
