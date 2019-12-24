@@ -133,31 +133,40 @@ def transform():
 	# gene_dict will store information for gene data output
 	# seg_dict will store information for segment data output
 	ensembl_dict, gene_dict, seg_dict  = {}, {}, {}
-	homd_segs = []
+	homd_segs, missing_hugo_symbol, missing_entrez_id, missing_both = [], [], [], []
 	extracted_file = open('extract.txt','r')
 	next(extracted_file)
 	file_reader = csv.reader(extracted_file, delimiter='\t')
-	for line in file_reader:
+	for line in file_reader:	
 		# if line has an associated ensembl_id and
 		# segment doesn't have a length of zero
 		if line[7] and line[1] != line[2]:
-			# ensembl_id = [entrez_id, hugo_symbol]
-			gene_dict[line[7]] = [line[8], line[9]]
+			if line[8] != '' or line[9] != '':
+				if line[8] == '':
+					missing_hugo_symbol.append(line[7])
+				if line[9] == '':
+					missing_entrez_id.append(line[7])
+				
+				# ensembl_id = [entrez_id, hugo_symbol]
+				gene_dict[line[7]] = [line[9], line[8]]
+				
+				# set up a key-value pair where the key is
+				# an ensembl id and the value is a list containing
+				# the associated segment start points, end points,
+				# copy numbers, titans_states gene start point, and
+				# gene end point
+				if line[7] not in ensembl_dict:
+					ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
+				
+				ensembl_dict[line[7]][0].append(int(line[1]))
+				ensembl_dict[line[7]][1].append(int(line[2]))
+				ensembl_dict[line[7]][2].append(float(line[3]))
+				ensembl_dict[line[7]][3].append(float(line[4]))
+				ensembl_dict[line[7]][4] = int(line[10])
+				ensembl_dict[line[7]][5] = int(line[11])
 
-			# set up a key-value pair where the key is
-			# an ensembl id and the value is a list containing
-			# the associated segment start points, end points,
-			# copy numbers, titans_states gene start point, and
-			# gene end point
-			if line[7] not in ensembl_dict:
-				ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
-			
-			ensembl_dict[line[7]][0].append(int(line[1]))
-			ensembl_dict[line[7]][1].append(int(line[2]))
-			ensembl_dict[line[7]][2].append(float(line[3]))
-			ensembl_dict[line[7]][3].append(float(line[4]))
-			ensembl_dict[line[7]][4] = int(line[10])
-			ensembl_dict[line[7]][5] = int(line[11])
+			if line[8] == '' and line[9] == '':
+				missing_both.append(line[7])
 
 		# (seg_start, seg_end) = [chr, num.mark, titan_state, copy_number]
 		seg_dict[(line[1], line[2])] = [line[0], line[6], line[4], line[3]]
@@ -218,6 +227,12 @@ def transform():
 		elif cn >= 6:
 			seg_dict[seg_length][3] = '2'
 
+	print('Ensembl IDs missing HUGO symbols:')
+	print(missing_hugo_symbol)
+	print('Ensembl IDs missing Entrez IDs:')
+	print(missing_entrez_id)
+	print('Ensembl IDs missing both:')
+	print(missing_both)
 	return gene_dict, seg_dict
 
 
