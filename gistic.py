@@ -160,8 +160,8 @@ def transform():
 				
 				ensembl_dict[line[7]][0].append(int(line[1]))
 				ensembl_dict[line[7]][1].append(int(line[2]))
-				ensembl_dict[line[7]][2].append(float(line[3]))
-				ensembl_dict[line[7]][3].append(float(line[4]))
+				ensembl_dict[line[7]][2].append(int(line[3]))
+				ensembl_dict[line[7]][3].append(int(line[4]))
 				ensembl_dict[line[7]][4] = int(line[10])
 				ensembl_dict[line[7]][5] = int(line[11])
 
@@ -231,7 +231,7 @@ def transform():
 	print(missing_hugo_symbol)
 	print('Ensembl IDs missing Entrez IDs:')
 	print(missing_entrez_id)
-	print('Ensembl IDs missing both:')
+	print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
 	print(missing_both)
 	return gene_dict, seg_dict
 
