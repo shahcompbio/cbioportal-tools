@@ -59,6 +59,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 		gtf_dict[ensembl_id][0] = min(gtf_dict[ensembl_id][0])
 		gtf_dict[ensembl_id][1] = max(gtf_dict[ensembl_id][1])
 
+	# finally, write to extract.txt
 	for igv_line, titan_line in zip(igv_reader, titan_reader):
 		ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
 		non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[9] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
@@ -92,7 +93,7 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
 		segs_to_remove = []
 		
 		# if ensembl_id gene is only present in one segment, add
-		# associated copy number to calculated_values.
+		# associated copy number to calculated_values
 		if len(seg_starts) == 1:
 			calculated_values[ensembl_id] = values_to_use[0]
 			continue
@@ -115,7 +116,7 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
 		seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
 		seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
 		
-		# calculate remaining required information
+		# determine remaining required information for calculation
 		denominator_rest = 1 * len(seg_starts)
 		numerator_rest = 0	
 		for value in seg_starts:
@@ -193,7 +194,7 @@ def transform():
 
 	# create a baseline (mu) for gene copy number transformation
 	calc_cn_list = [calculated_cns[key] for key in calculated_cns]
-	mu, std = norm.fit(calc_cn_list)
+	mu, _ = norm.fit(calc_cn_list)
 
 	# perform required gene transformations on copy number
 	for ensembl_id in calculated_cns:
@@ -211,7 +212,7 @@ def transform():
 
 	# create a baseline (mu) for segment copy number transformation
 	cn_list = [int(seg_dict[seg_length][3]) for seg_length in seg_dict]
-	mu, std = norm.fit(cn_list)
+	mu, _ = norm.fit(cn_list)
 
 	# perform required segment transformations on copy number
 	for seg_length in seg_dict:
@@ -233,6 +234,7 @@ def transform():
 	print(missing_entrez_id)
 	print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
 	print(missing_both)
+	
 	return gene_dict, seg_dict
 
 
