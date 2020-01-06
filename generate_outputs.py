@@ -238,25 +238,25 @@ def transform():
     return gene_dict, seg_dict
 
 
-def load(gene_dict, seg_dict, sample_id):
+def load(gene_dict, seg_dict, sample_id, output_dir):
     # split generated file into the four outputs
     gene_header = 'entrez_id\thugo_symbol\t' + sample_id + '\n'
     segment_header = 'sample_id\tchr\tseg_start\tseg_end\tnum.mark\tseg.mean\n'
     
-    gistic_gene_data = open('output/gistic_gene_data.txt', 'w+')
+    gistic_gene_data = open(output_dir + 'gistic_gene_data.txt', 'w+')
     gistic_gene_data.write(gene_header)
     
-    integer_gene_data = open('output/integer_gene_data.txt', 'w+')
+    integer_gene_data = open(output_dir + 'integer_gene_data.txt', 'w+')
     integer_gene_data.write(gene_header)
 
     for ensembl_id in gene_dict:
         gistic_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][2] + '\n')
         integer_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
-    gistic_seg_data = open('output/gistic_seg_data.txt', 'w+')
+    gistic_seg_data = open(output_dir + 'gistic_seg_data.txt', 'w+')
     gistic_seg_data.write(segment_header)
     
-    integer_seg_data = open('output/integer_seg_data.txt', 'w+')
+    integer_seg_data = open(output_dir + 'integer_seg_data.txt', 'w+')
     integer_seg_data.write(segment_header)
 
     for seg_length in seg_dict:
@@ -270,10 +270,11 @@ def load(gene_dict, seg_dict, sample_id):
 @click.argument('igv_segs')
 @click.argument('titan_segs')
 @click.argument('sample_id')
-def main(gtf, hgnc, igv_segs, titan_segs, sample_id):
+@click.option('--output_dir', default='')
+def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
     extract(gtf, hgnc, igv_segs, titan_segs)
     gene_dict, seg_dict = transform()
-    load(gene_dict, seg_dict, sample_id)
+    load(gene_dict, seg_dict, sample_id, output_dir)
 
 
 if __name__ == '__main__':
