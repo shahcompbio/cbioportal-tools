@@ -13,3 +13,5 @@ and returns four text files:
 2. gistic format gene data
 3. integer segment data
 4. integer gene data
+
+For testing please run `python test.py test/test_input/Homo_sapiens.GRCh37.73.gtf test/test_input/custom.txt test/test_input/igv_segs.txt test/test_input/titan_segs.txt test_sample_id`
