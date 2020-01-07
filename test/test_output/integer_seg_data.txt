@@ -1,4 +1,0 @@
-sample_id	chr	seg_start	seg_end	num.mark	seg.mean
-test_sample_id	1	1006069	6065013	3519	2
-test_sample_id	1	6065034	6065454	5	5
-test_sample_id	1	6065960	9186218	1718	2

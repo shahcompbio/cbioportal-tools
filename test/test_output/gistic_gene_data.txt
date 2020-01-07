@@ -1,2 +1,0 @@
-entrez_id	hugo_symbol	test_sample_id
-8514	KCNAB2	0
