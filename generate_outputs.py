@@ -8,7 +8,7 @@ from scipy.stats import norm
 # files need to live in the same directory as script, arg mus be full filename
 def extract(gtf, hgnc, igv_segs, titan_segs):
 	# extract required information from input files, place in single file
-	extracted_file = open('extract.txt','w+')
+	extracted_file = open('extract.txt', 'w+')
 	extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
 	
 	# from igv_segs.txt:
@@ -243,20 +243,20 @@ def load(gene_dict, seg_dict, sample_id):
 	gene_header = 'entrez_id\thugo_symbol\t' + sample_id + '\n'
 	segment_header = 'sample_id\tchr\tseg_start\tseg_end\tnum.mark\tseg.mean\n'
 	
-	gistic_gene_data = open('output/gistic_gene_data.txt','w+')
+	gistic_gene_data = open('output/gistic_gene_data.txt', 'w+')
 	gistic_gene_data.write(gene_header)
 	
-	integer_gene_data = open('output/integer_gene_data.txt','w+')
+	integer_gene_data = open('output/integer_gene_data.txt', 'w+')
 	integer_gene_data.write(gene_header)
 
 	for ensembl_id in gene_dict:
 		gistic_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][2] + '\n')
 		integer_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][3] + '\n')
 	
-	gistic_seg_data = open('output/gistic_seg_data.txt','w+')
+	gistic_seg_data = open('output/gistic_seg_data.txt', 'w+')
 	gistic_seg_data.write(segment_header)
 	
-	integer_seg_data = open('output/integer_seg_data.txt','w+')
+	integer_seg_data = open('output/integer_seg_data.txt', 'w+')
 	integer_seg_data.write(segment_header)
 
 	for seg_length in seg_dict:

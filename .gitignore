@@ -1,6 +1,3 @@
 .DS_Store
-extract.txt
-merged.txt
-notes.txt
-Homo_sapiens.GRCh37.73.gtf
+__pycache__
 venv/
