@@ -234,7 +234,7 @@ def transform(extracted_file):
     print('Ensembl IDs missing Entrez IDs:')
     print(missing_entrez_id)
     print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
-    print(missing_both)
+    print(missing_both, '\n')
     
     return gene_dict, seg_dict
 

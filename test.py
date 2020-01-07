@@ -1,5 +1,6 @@
 import click
 import filecmp
+import shutil
 
 from generate_outputs import extract, transform, load
 
@@ -16,7 +17,14 @@ def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
     gene_dict, seg_dict = transform(extracted_file)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
-    print('Outcomes of comparing test results to baselines:')
+    with open (output_dir + 'extract.txt', 'w+') as extracted_file_txt:
+        extracted_file.seek(0)
+        shutil.copyfileobj(extracted_file, extracted_file_txt)
+
+    if filecmp.cmp('test/output_baseline/extract.txt', output_dir + 'extract.txt'):
+        print('Intermediate extracted file matches baseline.')
+    else:
+        print('Intermediate extracted file does not matche baseline!')
 
     if filecmp.cmp('test/output_baseline/gistic_gene_data.txt', output_dir + 'gistic_gene_data.txt'):
         print('Gistic gene data output matches baseline.')
