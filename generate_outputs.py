@@ -2,13 +2,14 @@ import click
 import csv
 import re
 
+from io import StringIO
 from scipy.stats import norm
 
 
 # files need to live in the same directory as script, arg mus be full filename
 def extract(gtf, hgnc, igv_segs, titan_segs):
     # extract required information from input files, place in single file
-    extracted_file = open('extract.txt', 'w+')
+    extracted_file = StringIO()
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # from igv_segs.txt:
@@ -80,7 +81,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
                 extracted_file.write('\n')
 
-    extracted_file.close() 
+    extracted_file.seek(0)
+    return extracted_file 
 
 
 def calculate_weighted_average(ensembl_dict, column_to_use):
@@ -128,14 +130,13 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
     return calculated_values
 
 
-def transform():
+def transform(extracted_file):
     # perform weighted average calculations, and transformations
     # ensembl_dict will store information for calculations
     # gene_dict will store information for gene data output
     # seg_dict will store information for segment data output
     ensembl_dict, gene_dict, seg_dict  = {}, {}, {}
     homd_segs, missing_hugo_symbol, missing_entrez_id, missing_both = [], [], [], []
-    extracted_file = open('extract.txt','r')
     next(extracted_file)
     file_reader = csv.reader(extracted_file, delimiter='\t')
     for line in file_reader:    
@@ -272,8 +273,8 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
 @click.argument('sample_id')
 @click.option('--output_dir', default='')
 def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
-    extract(gtf, hgnc, igv_segs, titan_segs)
-    gene_dict, seg_dict = transform()
+    extracted_file = extract(gtf, hgnc, igv_segs, titan_segs)
+    gene_dict, seg_dict = transform(extracted_file)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
 
