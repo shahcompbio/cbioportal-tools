@@ -6,9 +6,9 @@ from io import StringIO
 from scipy.stats import norm
 
 
-# files need to live in the same directory as script, arg mus be full filename
+# args mus be full filepaths
 def extract(gtf, hgnc, igv_segs, titan_segs):
-    # extract required information from input files, place in single file
+    # extract required columns from input files, place in single file
     extracted_file = StringIO()
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
@@ -25,7 +25,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     next(titan_file)
     titan_reader = csv.reader(titan_file, delimiter='\t')
     
-    # from custom.txt
+    # from custom.txt:
     # Approved symbol, NCBI Gene ID
     hgnc_file = open(hgnc, 'r')
     next(hgnc_file)
@@ -60,21 +60,26 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
         gtf_dict[ensembl_id][0] = min(gtf_dict[ensembl_id][0])
         gtf_dict[ensembl_id][1] = max(gtf_dict[ensembl_id][1])
 
-    # finally, write to extract.txt
+    # finally, write specified columns to extract.txt
     for igv_line, titan_line in zip(igv_reader, titan_reader):
         ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
+        # chr   seg_start   seg_end copy_number titan_state titan_call  num.mark
         non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[9] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
+        
         if not ensembl_ids:
             extracted_file.write(non_ensembl_info + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\n')
         else:
             for ensembl_id in ensembl_ids:
                 extracted_file.write(non_ensembl_info + '\t' + ensembl_id + '\t')
+                
                 if ensembl_id in hgnc_dict:
+                    # hugo_symbol   entrez_id
                     extracted_file.write(hgnc_dict[ensembl_id][0] + '\t' + hgnc_dict[ensembl_id][1] + '\t')
                 else:
                     extracted_file.write('' + '\t' + '' + '\t')
                 
                 if ensembl_id in gtf_dict:
+                    # gene_start    gene_end
                     extracted_file.write(gtf_dict[ensembl_id][0] + '\t' + gtf_dict[ensembl_id][1])
                 else:
                     extracted_file.write('' + '\t' + '')
@@ -143,13 +148,14 @@ def transform(extracted_file):
         # if line has an associated ensembl_id and
         # segment doesn't have a length of zero
         if line[7] and line[1] != line[2]:
+            # if gene is missing hugo_symbol or entrez_id
             if line[8] != '' or line[9] != '':
                 if line[8] == '':
                     missing_hugo_symbol.append(line[7])
                 if line[9] == '':
                     missing_entrez_id.append(line[7])
                 
-                # ensembl_id = [entrez_id, hugo_symbol]
+                # ensembl_id: [entrez_id, hugo_symbol]
                 gene_dict[line[7]] = [line[9], line[8]]
                 
                 # set up a key-value pair where the key is
@@ -167,10 +173,11 @@ def transform(extracted_file):
                 ensembl_dict[line[7]][4] = int(line[10])
                 ensembl_dict[line[7]][5] = int(line[11])
 
+            # if gene is missing hugo_symbol and entrez_id
             if line[8] == '' and line[9] == '':
                 missing_both.append(line[7])
 
-        # (seg_start, seg_end) = [chr, num.mark, titan_state, copy_number]
+        # (seg_start, seg_end): [chr, num.mark, titan_state, copy_number]
         seg_dict[(line[1], line[2])] = [line[0], line[6], line[4], line[3]]
         
         # check for homozygous deletion
@@ -179,17 +186,21 @@ def transform(extracted_file):
 
     copy_numbers = {}
     for ensembl_id in ensembl_dict:
+        # key: ensembl_id, value: associated copy number(s)
         copy_numbers[ensembl_id] = ensembl_dict[ensembl_id][2]
 
     calculated_cns = calculate_weighted_average(ensembl_dict, copy_numbers)
     
     titan_states = {}
     for ensembl_id in ensembl_dict:
+        # key: ensembl_id, value: associated titan state(s)
         titan_states[ensembl_id] = ensembl_dict[ensembl_id][3]
 
     calculated_tss = calculate_weighted_average(ensembl_dict, titan_states)
 
     for ensembl_id in calculated_cns:
+        # append calculated copy number and titan state
+        # (weighted average)
         gene_dict[ensembl_id].append(str(calculated_cns[ensembl_id]))
         gene_dict[ensembl_id].append(str(calculated_tss[ensembl_id]))
 
@@ -200,6 +211,7 @@ def transform(extracted_file):
     # perform required gene transformations on copy number
     for ensembl_id in calculated_cns:
         cn = calculated_cns[ensembl_id]
+        
         if 0 <= cn < 1:
             gene_dict[ensembl_id][2] = '-2'
         elif 1 <= cn <= mu-1:
@@ -218,6 +230,7 @@ def transform(extracted_file):
     # perform required segment transformations on copy number
     for seg_length in seg_dict:
         cn = int(seg_dict[seg_length][3])
+        
         if seg_length in homd_segs:
             seg_dict[seg_length][3] = '-2'
         elif 0 <= cn <= mu-1:
@@ -250,6 +263,8 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
     integer_gene_data = open(output_dir + 'integer_gene_data.txt', 'w+')
     integer_gene_data.write(gene_header)
 
+    # ensembl_id:
+    # [entrez_id, hugo_symbol, transformed_calc_cn, calc_titan_state]
     for ensembl_id in gene_dict:
         gistic_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][2] + '\n')
         integer_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][3] + '\n')
@@ -260,6 +275,8 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
     integer_seg_data = open(output_dir + 'integer_seg_data.txt', 'w+')
     integer_seg_data.write(segment_header)
 
+    # (seg_start, seg_end):
+    # [chr, num.mark, titan_state, transformed_copy_number]
     for seg_length in seg_dict:
         gistic_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
         integer_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][2] + '\n')

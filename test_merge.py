@@ -4,6 +4,7 @@ import filecmp
 from merge_gene_outputs import merge_gene_outputs
 
 
+# check output against baseline
 @click.command()
 @click.option('--input_dir', default='test/merge_gene_outputs/test_input/')
 @click.option('--output_dir', default='test/merge_gene_outputs/test_output/')
