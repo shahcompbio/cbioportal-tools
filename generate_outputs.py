@@ -12,21 +12,17 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file = StringIO()
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
-    # from igv_segs.txt:
-    # num.mark
+    # test file: igv_segs.txt
     igv_file = open(igv_segs, 'r')
     next(igv_file)
     igv_reader = csv.reader(igv_file, delimiter='\t')
     
-    # from titan_segs.txt:
-    # Chromosome, Start_Position(bp), End_Position(bp), Copy_Number,
-    # TITAN_state, Pygenes(gene_id,gene_name;) (throw away gene_name)
+    # test file: titan_segs.txt
     titan_file = open(titan_segs, 'r')
     next(titan_file)
     titan_reader = csv.reader(titan_file, delimiter='\t')
     
-    # from custom.txt:
-    # Approved symbol, NCBI Gene ID
+    # test file: custom.txt
     hgnc_file = open(hgnc, 'r')
     next(hgnc_file)
     hgnc_reader = csv.reader(hgnc_file, delimiter='\t')
@@ -199,8 +195,8 @@ def transform(extracted_file):
     calculated_tss = calculate_weighted_average(ensembl_dict, titan_states)
 
     for ensembl_id in calculated_cns:
-        # append calculated copy number and titan state
-        # (weighted average)
+        # append weighted average of calculated copy number and
+        # titan state, for each ensembl_id
         gene_dict[ensembl_id].append(str(calculated_cns[ensembl_id]))
         gene_dict[ensembl_id].append(str(calculated_tss[ensembl_id]))
 
@@ -253,7 +249,7 @@ def transform(extracted_file):
 
 
 def load(gene_dict, seg_dict, sample_id, output_dir):
-    # split generated file into the four outputs
+    # split generated file into four outputs
     gene_header = 'entrez_id\thugo_symbol\t' + sample_id + '\n'
     segment_header = 'sample_id\tchr\tseg_start\tseg_end\tnum.mark\tseg.mean\n'
     
