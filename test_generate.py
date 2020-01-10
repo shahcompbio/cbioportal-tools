@@ -5,6 +5,7 @@ import shutil
 from generate_outputs import extract, transform, load
 
 
+# check outputs and intermediate file against baselines
 @click.command()
 @click.argument('gtf')
 @click.argument('hgnc')
