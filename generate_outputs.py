@@ -250,8 +250,8 @@ def transform(extracted_file):
 
 def load(gene_dict, seg_dict, sample_id, output_dir):
     # split generated file into four outputs
-    gene_header = 'entrez_id\thugo_symbol\t' + sample_id + '\n'
-    segment_header = 'sample_id\tchr\tseg_start\tseg_end\tnum.mark\tseg.mean\n'
+    gene_header = 'Entrez_Gene_Id\tHugo_Symbol\t' + sample_id + '\n'
+    segment_header = 'ID\tchrom\tloc.start\tloc.end\tnum.mark\tseg.mean\n'
     
     gistic_gene_data = open(output_dir + 'gistic_gene_data.txt', 'w+')
     gistic_gene_data.write(gene_header)

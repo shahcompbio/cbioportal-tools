@@ -1,5 +1,6 @@
 import click
 import glob
+import numpy as np
 import pandas as pd
 
 # merge multiple gistic OR integer gene data text files
@@ -9,9 +10,9 @@ def merge_gene_outputs(input_dir, output_dir):
     dfs_to_merge = []
     
     for file in files_to_merge:
-        data_frame = pd.read_csv(file, delimiter='\t', dtype={'entrez_id': str}).astype(str)
+        data_frame = pd.read_csv(file, delimiter='\t', dtype={'Entrez_Gene_Id': str}).astype(str)
         
-        if list(data_frame)[0] != 'entrez_id' or list(data_frame)[1] != 'hugo_symbol':
+        if list(data_frame)[0] != 'Entrez_Gene_Id' or list(data_frame)[1] != 'Hugo_Symbol':
             files_with_issues.append(file)
             continue
         
@@ -27,8 +28,10 @@ def merge_gene_outputs(input_dir, output_dir):
     merged_file = dfs_to_merge.pop()
     
     while dfs_to_merge:
-        merged_file = pd.merge(merged_file, dfs_to_merge.pop(), on=['hugo_symbol', 'entrez_id'], how='outer')
+        merged_file = pd.merge(merged_file, dfs_to_merge.pop(), on=['Hugo_Symbol', 'Entrez_Gene_Id'], how='outer')
 
+    merged_file = merged_file.replace(np.nan, 'NA')
+    merged_file = merged_file.replace('nan', '')
     merged_file.to_csv(output_dir + 'merged.txt', index=None, sep='\t')
 
 

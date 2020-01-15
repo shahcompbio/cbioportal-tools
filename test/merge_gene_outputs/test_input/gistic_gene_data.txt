@@ -1,2 +1,2 @@
-entrez_id	hugo_symbol	test_sample_id_1
+Entrez_Gene_Id	Hugo_Symbol	test_sample_id_1
 8514	KCNAB2	0
