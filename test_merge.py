@@ -14,7 +14,7 @@ def main(input_dir, output_dir):
     if filecmp.cmp('test/merge_gene_outputs/output_baseline/merged.txt', output_dir + 'merged.txt'):
         print('Merged file matches baseline.')
     else:
-        print('Merged file does not matche baseline!')
+        print('Merged file does not match baseline!')
 
 
 if __name__ == '__main__':

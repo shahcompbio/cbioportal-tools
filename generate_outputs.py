@@ -250,7 +250,7 @@ def transform(extracted_file):
 
 def load(gene_dict, seg_dict, sample_id, output_dir):
     # split generated file into four outputs
-    gene_header = 'Entrez_Gene_Id\tHugo_Symbol\t' + sample_id + '\n'
+    gene_header = 'Hugo_Symbol\tEntrez_Gene_Id\t' + sample_id + '\n'
     segment_header = 'ID\tchrom\tloc.start\tloc.end\tnum.mark\tseg.mean\n'
     
     gistic_gene_data = open(output_dir + 'gistic_gene_data.txt', 'w+')
@@ -262,8 +262,8 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
     # ensembl_id:
     # [entrez_id, hugo_symbol, transformed_calc_cn, calc_titan_state]
     for ensembl_id in gene_dict:
-        gistic_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][2] + '\n')
-        integer_gene_data.write(gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][3] + '\n')
+        gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
+        integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
     gistic_seg_data = open(output_dir + 'gistic_seg_data.txt', 'w+')
     gistic_seg_data.write(segment_header)
