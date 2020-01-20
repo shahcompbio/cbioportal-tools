@@ -198,7 +198,8 @@ def transform(extracted_file):
         # append weighted average of calculated copy number and
         # titan state, for each ensembl_id
         gene_dict[ensembl_id].append(str(calculated_cns[ensembl_id]))
-        gene_dict[ensembl_id].append(str(calculated_tss[ensembl_id]))
+        # remember to round to nearest integer for integer data
+        gene_dict[ensembl_id].append(str(round(calculated_tss[ensembl_id])))
 
     # create a baseline (mu) for gene copy number transformation
     calc_cn_list = [calculated_cns[key] for key in calculated_cns]

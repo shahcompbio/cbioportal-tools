@@ -1,2 +1,2 @@
 Hugo_Symbol	Entrez_Gene_Id	test_sample_id
-KCNAB2	8514	4.903583394445396
+KCNAB2	8514	5
