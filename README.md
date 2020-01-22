@@ -1,4 +1,4 @@
-## cBioPortal Copy Number Formatting
+## cBioPortal Copy Number Data Formatting Tools
 
 ### generate_outputs.py
 
