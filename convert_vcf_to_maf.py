@@ -2,6 +2,7 @@
 http://snpeff.sourceforge.net/SnpEff_manual.html
 https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
 https://svn.bcgsc.ca/bitbucket/projects/KRONOS/repos/convert_vcf_to_maf/browse/component_seed/vcf2maf/vcf2maf-master/vcf2maf_museq.pl
+
 if two or more annotations in .vcf Annotation column, take first one (maybe related to "most deleterious" as shown here: http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf) 
 '''
 
@@ -10,10 +11,9 @@ import csv
 import glob
 import pandas as pd
 
-@click.command()
-@click.option('--input_dir', default='')
-@click.option('--output_dir', default='')
-def main(input_dir, output_dir):
+
+# parse function
+def convert(input_file, sample_id, hgnc):
     required_cols = [
     'Hugo_Symbol', # Gene_Name
     'Entrez_Gene_Id', # map from custom.txt
@@ -73,46 +73,31 @@ def main(input_dir, output_dir):
     }
 
     # TODO: if not in the mapping, throw some kind of exception/warning
+    
+    hugo_entrez_mapping = {}
+    df = pd.read_csv(hgnc, delimiter='\t', dtype={'NCBI Gene ID': str})
+    for hugo, entrez in zip(df['Approved symbol'], df['NCBI Gene ID']):
+        hugo_entrez_mapping[hugo] = entrez
 
-    maf_choices = [
-    'Frame_Shift_Del',
-    'Frame_Shift_Ins',
-    'In_Frame_Del',
-    'In_Frame_Ins',
-    'Missense_Mutation',
-    'Nonsense_Mutation',
-    'Silent',
-    'Splice_Site',
-    'Translation_Start_Site',
-    'Nonstop_Mutation',
-    '3\'UTR',
-    '3\'Flank',
-    '5\'UTR',
-    '5\'Flank',
-    'IGR',
-    'Intron',
-    'RNA',
-    'Targeted_Region',
-    'De_novo_Start_InFrame',
-    'De_novo_Start_OutOfFrame',
-    'Splice_Region',
-    'Unknown'
-    ]
+    df = pd.read_csv(input_file, delimiter='\t', skiprows=124)
 
-    # 'MODIFER' at column 92
-    open_file = open(input_dir + 'data_mutations_extended.maf', 'r')
-    next(open_file)
-    next(open_file)
-    read = csv.reader(open_file, delimiter='\t')
 
-    df = pd.read_csv(input_dir + 'data_mutations_extended.maf', delimiter='\t', skiprows=1)
-    df = df[required_cols]
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.width', 2000)
+# merge function
+def merge(output_dir):
+    pass
 
+
+@click.command()
+@click.option('--hgnc', default='custom.txt')
+@click.option('--input_dir', default='')
+@click.option('--output_dir', default='')
+def main(hgnc, input_dir, output_dir):
     files_to_merge = glob.glob(input_dir + '*.vcf')
-    # for file in files_to_merge:          
+    for file in files_to_merge:
+        sample_id = click.prompt('Please enter a sample id for ' + file)
+        convert(file, sample_id, hgnc)
+
+    merge(output_dir)
 
 
 if __name__ == '__main__':
