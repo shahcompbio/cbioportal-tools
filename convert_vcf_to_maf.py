@@ -3,7 +3,12 @@ http://snpeff.sourceforge.net/SnpEff_manual.html
 https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
 https://svn.bcgsc.ca/bitbucket/projects/KRONOS/repos/convert_vcf_to_maf/browse/component_seed/vcf2maf/vcf2maf-master/vcf2maf_museq.pl
 
-if two or more annotations in .vcf Annotation column, take first one (maybe related to "most deleterious" as shown here: http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf) 
+if two or more annotations in .vcf Annotation column, take first one (maybe related to "most deleterious" as shown here: http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf)
+
+Impact prediction:
+HIGH > MODERATE > LOW > MODIFIER
+If Annotation column in .vcf is 'missense_variant', treat as highest rank (above HIGH) (https://github.com/shahcompbio/scgenome/pull/16)
+If multiple annotations tie for highest rank, pick one at random
 '''
 
 import click
@@ -84,7 +89,7 @@ def convert(input_file, sample_id, hgnc):
 
 # merge function
 def merge(output_dir):
-    pass
+    header='Hugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short'
 
 
 @click.command()
