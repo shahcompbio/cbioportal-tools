@@ -10,7 +10,7 @@ from scipy.stats import norm
 def extract(gtf, hgnc, igv_segs, titan_segs):
     # extract required columns from input files, place in single file
     extracted_file = StringIO()
-    extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\ttitan_call\tnum.mark\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
+    extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
     igv_file = open(igv_segs, 'r')
@@ -59,8 +59,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     # finally, write specified columns to extract.txt
     for igv_line, titan_line in zip(igv_reader, titan_reader):
         ensembl_ids = re.findall(r'ENSG\d+', titan_line[-1])
-        # chr   seg_start   seg_end copy_number titan_state titan_call  num.mark
-        non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[9] + '\t' + titan_line[7] + '\t' + titan_line[8] + '\t' + igv_line[4]
+        # chr   seg_start   seg_end copy_number titan_state    num.mark    median_logr
+        non_ensembl_info = titan_line[1] + '\t' + titan_line[2] + '\t' + titan_line[3] + '\t' + titan_line[9] + '\t' + titan_line[7] + '\t' + igv_line[4] + '\t' + titan_line[6]
         
         if not ensembl_ids:
             extracted_file.write(non_ensembl_info + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\t' + '' + '\n')
@@ -157,7 +157,7 @@ def transform(extracted_file):
                 # set up a key-value pair where the key is
                 # an ensembl id and the value is a list containing
                 # the associated segment start points, end points,
-                # copy numbers, titans_states gene start point, and
+                # copy numbers, titan states, gene start point, and
                 # gene end point
                 if line[7] not in ensembl_dict:
                     ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
@@ -173,12 +173,8 @@ def transform(extracted_file):
             if line[8] == '' and line[9] == '':
                 missing_both.append(line[7])
 
-        # (seg_start, seg_end): [chr, num.mark, titan_state, copy_number]
-        seg_dict[(line[1], line[2])] = [line[0], line[6], line[4], line[3]]
-        
-        # check for homozygous deletion
-        if line[5] == 'HOMD':
-            homd_segs.append((line[1], line[2]))
+        # (seg_start, seg_end): [chr, num.mark, titan_state, median_logr]
+        seg_dict[(line[1], line[2])] = [line[0], line[5], line[4], line[6]]
 
     copy_numbers = {}
     for ensembl_id in ensembl_dict:
@@ -220,25 +216,6 @@ def transform(extracted_file):
         elif cn >= 6:
             gene_dict[ensembl_id][2] = '2'
 
-    # create a baseline (mu) for segment copy number transformation
-    cn_list = [int(seg_dict[seg_length][3]) for seg_length in seg_dict]
-    mu, _ = norm.fit(cn_list)
-
-    # perform required segment transformations on copy number
-    for seg_length in seg_dict:
-        cn = int(seg_dict[seg_length][3])
-        
-        if seg_length in homd_segs:
-            seg_dict[seg_length][3] = '-2'
-        elif 0 <= cn <= mu-1:
-            seg_dict[seg_length][3] = '-1'
-        elif mu-1 < cn < mu+1:
-            seg_dict[seg_length][3] = '0'
-        elif mu+1 <= cn < 6:
-            seg_dict[seg_length][3] = '1'
-        elif cn >= 6:
-            seg_dict[seg_length][3] = '2'
-
     print('Ensembl IDs missing HUGO symbols:')
     print(missing_hugo_symbol)
     print('Ensembl IDs missing Entrez IDs:')
@@ -266,14 +243,14 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
         gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
         integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
-    gistic_seg_data = open(output_dir + 'gistic_seg_data.txt', 'w+')
+    gistic_seg_data = open(output_dir + 'log_seg_data.txt', 'w+')
     gistic_seg_data.write(segment_header)
     
     integer_seg_data = open(output_dir + 'integer_seg_data.txt', 'w+')
     integer_seg_data.write(segment_header)
 
     # (seg_start, seg_end):
-    # [chr, num.mark, titan_state, transformed_copy_number]
+    # [chr, num.mark, titan_state, median_logr]
     for seg_length in seg_dict:
         gistic_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
         integer_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][2] + '\n')

@@ -18,24 +18,15 @@ def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
     gene_dict, seg_dict = transform(extracted_file)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
-    with open (output_dir + 'extract.txt', 'w+') as extracted_file_txt:
-        extracted_file.seek(0)
-        shutil.copyfileobj(extracted_file, extracted_file_txt)
-
-    if filecmp.cmp('test/generate_outputs/output_baseline/extract.txt', output_dir + 'extract.txt'):
-        print('Intermediate extracted file matches baseline.')
-    else:
-        print('Intermediate extracted file does not matche baseline!')
-
     if filecmp.cmp('test/generate_outputs/output_baseline/gistic_gene_data.txt', output_dir + 'gistic_gene_data.txt'):
         print('Gistic gene data output matches baseline.')
     else:
         print('Gistic gene data output does not match baseline!')
     
-    if filecmp.cmp('test/generate_outputs/output_baseline/gistic_seg_data.txt', output_dir + 'gistic_seg_data.txt'):
-        print('Gistic segment data output matches baseline.')
+    if filecmp.cmp('test/generate_outputs/output_baseline/log_seg_data.txt', output_dir + 'log_seg_data.txt'):
+        print('Log segment data output matches baseline.')
     else:
-        print('Gistic segment data output does not match baseline!')
+        print('Log segment data output does not match baseline!')
     
     if filecmp.cmp('test/generate_outputs/output_baseline/integer_gene_data.txt', output_dir + 'integer_gene_data.txt'):
         print('Integer gene data output matches baseline.')
