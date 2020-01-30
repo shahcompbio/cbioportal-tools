@@ -1,4 +1,0 @@
-ID	chrom	loc.start	loc.end	num.mark	seg.mean
-test_sample_id	1	1006069	6065013	3519	0
-test_sample_id	1	6065034	6065454	5	0
-test_sample_id	1	6065960	9186218	1718	0
