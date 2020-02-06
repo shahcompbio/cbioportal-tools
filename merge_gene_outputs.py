@@ -10,7 +10,7 @@ def merge_gene_outputs(input_dir, output_dir):
     dfs_to_merge = []
     
     for file in files_to_merge:
-        data_frame = pd.read_csv(file, delimiter='\t', dtype={'Entrez_Gene_Id': str}).astype(str)
+        data_frame = pd.read_csv(file, delimiter='\t', dtype=str)
         
         if list(data_frame)[0] != 'Hugo_Symbol' or list(data_frame)[1] != 'Entrez_Gene_Id':
             files_with_issues.append(file)
