@@ -132,7 +132,7 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
     return calculated_values
 
 
-def transform(extracted_file):
+def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both):
     # perform weighted average calculations, and transformations
     # ensembl_dict will store information for calculations
     # gene_dict will store information for gene data output
@@ -219,12 +219,15 @@ def transform(extracted_file):
         elif cn >= 6:
             gene_dict[ensembl_id][2] = '2'
 
-    print('Ensembl IDs missing HUGO symbols:')
-    print(missing_hugo_symbol)
-    print('Ensembl IDs missing Entrez IDs:')
-    print(missing_entrez_id)
-    print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
-    print(missing_both, '\n')
+    if show_missing_hugo:
+        print('Ensembl IDs missing HUGO symbols:')
+        print(missing_hugo_symbol)
+    if show_missing_entrez:
+        print('Ensembl IDs missing Entrez IDs:')
+        print(missing_entrez_id)
+    if show_missing_both:
+        print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
+        print(missing_both, '\n')
     
     return gene_dict, seg_dict
 
@@ -266,9 +269,12 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
 @click.argument('titan_segs')
 @click.argument('sample_id')
 @click.option('--output_dir', default='')
-def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
+@click.option('--show_missing_hugo/--no_missing_hugo', default=False)
+@click.option('--show_missing_entrez/--no_missing_entrez', default=False)
+@click.option('--show_missing_both/--no_missing_both', default=False)
+def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir, show_missing_hugo, show_missing_entrez, show_missing_both):
     extracted_file = extract(gtf, hgnc, igv_segs, titan_segs)
-    gene_dict, seg_dict = transform(extracted_file)
+    gene_dict, seg_dict = transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
 

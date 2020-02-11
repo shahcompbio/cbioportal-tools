@@ -13,9 +13,12 @@ from generate_outputs import extract, transform, load
 @click.argument('titan_segs')
 @click.argument('sample_id')
 @click.option('--output_dir', default='test/generate_outputs/test_output/')
-def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir):
+@click.option('--show_missing_hugo/--no_missing_hugo', default=False)
+@click.option('--show_missing_entrez/--no_missing_entrez', default=False)
+@click.option('--show_missing_both/--no_missing_both', default=False)
+def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir, show_missing_hugo, show_missing_entrez, show_missing_both):
     extracted_file = extract(gtf, hgnc, igv_segs, titan_segs)
-    gene_dict, seg_dict = transform(extracted_file)
+    gene_dict, seg_dict = transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
     if filecmp.cmp('test/generate_outputs/output_baseline/gistic_gene_data.txt', output_dir + 'gistic_gene_data.txt'):
