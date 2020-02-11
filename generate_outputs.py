@@ -1,5 +1,6 @@
 import click
 import csv
+import logging
 import re
 
 from io import StringIO
@@ -205,8 +206,10 @@ def transform(extracted_file):
     for ensembl_id in calculated_cns:
         cn = calculated_cns[ensembl_id]
         
-        if 0 <= cn < 1:
+        if cn < 1:
             gene_dict[ensembl_id][2] = '-2'
+            if cn < 0:
+                logging.warning(f'{ensembl_id} has a calculated cn value lesser than 0')
         elif 1 <= cn <= mu-1:
             gene_dict[ensembl_id][2] = '-1'
         elif mu-1 < cn < mu+1:
