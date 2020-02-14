@@ -17,6 +17,12 @@ import click
 import gzip
 import yaml
 
+import generate_outputs
+
+
+def converter(museq_vcf, sample_id, hgnc_file):
+    pass
+
 
 def filter(sample_id, museq_vcf, strelka_vcf, temp_dir):
     '''
@@ -62,6 +68,8 @@ def filter(sample_id, museq_vcf, strelka_vcf, temp_dir):
             outstr = '\t'.join(line)+'\n'
             museqout.write(outstr)
 
+    return museq_filtered
+
 
 @click.command()
 @click.argument('input_yaml')
@@ -72,12 +80,19 @@ def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
     with open(input_yaml) as file:
         yaml_file = yaml.full_load(file)
         
-        path_to_mapping_file = yaml_file['id_mapping']
-        path_to_gtf_file = yaml_file['gtf']
+        hgnc_file = yaml_file['id_mapping']
+        gtf_file = yaml_file['gtf']
         
         for patient, doc in yaml_file['patients'].items():
+            # print(patient)
             for sample, doc in doc.items():
-                filter(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                museq_filtered = filter(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                with gzip.open(museq_filtered, 'rt') as museq_vcf:
+                    # TODO: write converter
+                    # converter(museq_filtered, sample, hgnc_file)
+                    pass
+                with gzip.open(doc['titan_igv_segs'], 'rt') as titan_igv_segs, gzip.open(doc['titan_segs_csv'], 'rt') as titan_segs_csv:
+                    generate_outputs(gtf_file, hgnc_file, titan_igv_segs, titan_segs_csv, sample, temp_dir)
 
 
 if __name__ == '__main__':
