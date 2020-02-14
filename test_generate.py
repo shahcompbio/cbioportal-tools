@@ -21,22 +21,22 @@ def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir, show_missing_hu
     gene_dict, seg_dict = transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both)
     load(gene_dict, seg_dict, sample_id, output_dir)
 
-    if filecmp.cmp('test/generate_outputs/output_baseline/gistic_gene_data.txt', output_dir + 'gistic_gene_data.txt'):
+    if filecmp.cmp('test/generate_outputs/output_baseline/gistic_gene_data.txt', output_dir + sample_id + '_gistic_gene_data.txt'):
         print('Gistic gene data output matches baseline.')
     else:
         print('Gistic gene data output does not match baseline!')
     
-    if filecmp.cmp('test/generate_outputs/output_baseline/log_seg_data.txt', output_dir + 'log_seg_data.txt'):
+    if filecmp.cmp('test/generate_outputs/output_baseline/log_seg_data.txt', output_dir + sample_id + '_log_seg_data.txt'):
         print('Log segment data output matches baseline.')
     else:
         print('Log segment data output does not match baseline!')
     
-    if filecmp.cmp('test/generate_outputs/output_baseline/integer_gene_data.txt', output_dir + 'integer_gene_data.txt'):
+    if filecmp.cmp('test/generate_outputs/output_baseline/integer_gene_data.txt', output_dir + sample_id + '_integer_gene_data.txt'):
         print('Integer gene data output matches baseline.')
     else:
         print('Integer gene data output does not match baseline!')
     
-    if filecmp.cmp('test/generate_outputs/output_baseline/integer_seg_data.txt', output_dir + 'integer_seg_data.txt'):
+    if filecmp.cmp('test/generate_outputs/output_baseline/integer_seg_data.txt', output_dir + sample_id + '_integer_seg_data.txt'):
         print('Integer segment data output matches baseline.')
     else:
         print('Integer segment data output does not match baseline!')

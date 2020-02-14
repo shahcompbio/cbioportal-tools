@@ -237,10 +237,10 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
     gene_header = 'Hugo_Symbol\tEntrez_Gene_Id\t' + sample_id + '\n'
     segment_header = 'ID\tchrom\tloc.start\tloc.end\tnum.mark\tseg.mean\n'
     
-    gistic_gene_data = open(output_dir + 'gistic_gene_data.txt', 'w+')
+    gistic_gene_data = open(output_dir + sample_id + '_gistic_gene_data.txt', 'w+')
     gistic_gene_data.write(gene_header)
     
-    integer_gene_data = open(output_dir + 'integer_gene_data.txt', 'w+')
+    integer_gene_data = open(output_dir + sample_id + '_integer_gene_data.txt', 'w+')
     integer_gene_data.write(gene_header)
 
     # ensembl_id:
@@ -249,10 +249,10 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
         gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
         integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
-    gistic_seg_data = open(output_dir + 'log_seg_data.txt', 'w+')
+    gistic_seg_data = open(output_dir + sample_id + '_log_seg_data.txt', 'w+')
     gistic_seg_data.write(segment_header)
     
-    integer_seg_data = open(output_dir + 'integer_seg_data.txt', 'w+')
+    integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.txt', 'w+')
     integer_seg_data.write(segment_header)
 
     # (seg_start, seg_end):

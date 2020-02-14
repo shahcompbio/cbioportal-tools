@@ -18,7 +18,7 @@ and returns four text files:
 
 For testing please run `python test_generate.py test/generate_outputs/test_input/Homo_sapiens.GRCh37.73.gtf test/generate_outputs/test_input/custom.txt test/generate_outputs/test_input/igv_segs.txt test/generate_outputs/test_input/titan_segs.txt test_sample_id`
 
-### merge_gene_outputs.py
+### merge_outputs.py
 
 Code that takes a directory of gistic format gene data OR integer gene data text files and outputs a single text file with their contents merged.
 
