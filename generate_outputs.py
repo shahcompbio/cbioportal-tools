@@ -133,10 +133,14 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
 
 
 def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both):
-    # perform weighted average calculations, and transformations
-    # ensembl_dict will store information for calculations
-    # gene_dict will store information for gene data output
-    # seg_dict will store information for segment data output
+    '''
+    perform weighted average calculations, and transformations
+    
+    ensembl_dict will store information for calculations
+    gene_dict will store information for gene data output
+    seg_dict will store information for segment data output
+    '''
+    
     ensembl_dict, gene_dict, seg_dict  = {}, {}, {}
     homd_segs, missing_hugo_symbol, missing_entrez_id, missing_both = [], [], [], []
     next(extracted_file)
@@ -232,34 +236,49 @@ def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missi
     return gene_dict, seg_dict
 
 
-def load(gene_dict, seg_dict, sample_id, output_dir):
-    # split generated file into four outputs
+def load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene, output_integer_gene, output_log_seg, output_integer_seg):
+    '''
+    split generated file into four outputs
+
+    gene_dict contains key-value pairs of
+    ensembl_id:
+    [entrez_id, hugo_symbol, transformed_calc_cn, calc_titan_state]
+    
+    seg_dict contains key-value pairs of
+    (seg_start, seg_end):
+    [chr, num.mark, titan_state, median_logr]
+    '''
+    
     gene_header = 'Hugo_Symbol\tEntrez_Gene_Id\t' + sample_id + '\n'
     segment_header = 'ID\tchrom\tloc.start\tloc.end\tnum.mark\tseg.mean\n'
     
-    gistic_gene_data = open(output_dir + sample_id + '_gistic_gene_data.txt', 'w+')
-    gistic_gene_data.write(gene_header)
+    if output_gistic_gene:
+        gistic_gene_data = open(output_dir + sample_id + '_gistic_gene_data.txt', 'w+')
+        gistic_gene_data.write(gene_header)
+        
+        for ensembl_id in gene_dict:
+            gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
     
-    integer_gene_data = open(output_dir + sample_id + '_integer_gene_data.txt', 'w+')
-    integer_gene_data.write(gene_header)
+    if output_integer_gene:
+        integer_gene_data = open(output_dir + sample_id + '_integer_gene_data.txt', 'w+')
+        integer_gene_data.write(gene_header)
 
-    # ensembl_id:
-    # [entrez_id, hugo_symbol, transformed_calc_cn, calc_titan_state]
-    for ensembl_id in gene_dict:
-        gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
-        integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
+        for ensembl_id in gene_dict:
+            integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
-    gistic_seg_data = open(output_dir + sample_id + '_log_seg_data.txt', 'w+')
-    gistic_seg_data.write(segment_header)
-    
-    integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.txt', 'w+')
-    integer_seg_data.write(segment_header)
+    if output_log_seg:
+        log_seg_data = open(output_dir + sample_id + '_log_seg_data.txt', 'w+')
+        log_seg_data.write(segment_header)
 
-    # (seg_start, seg_end):
-    # [chr, num.mark, titan_state, median_logr]
-    for seg_length in seg_dict:
-        gistic_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
-        integer_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][2] + '\n')
+        for seg_length in seg_dict:
+            log_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
+    
+    if output_integer_seg:
+        integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.txt', 'w+')
+        integer_seg_data.write(segment_header)
+
+        for seg_length in seg_dict:
+            integer_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][2] + '\n')
     
 
 @click.command()
@@ -269,13 +288,17 @@ def load(gene_dict, seg_dict, sample_id, output_dir):
 @click.argument('titan_segs')
 @click.argument('sample_id')
 @click.option('--output_dir', default='')
+@click.option('--output_gistic_gene/--no_gistic_gene', default=True)
+@click.option('--output_integer_gene/--no_integer_gene', default=False)
+@click.option('--output_log_seg/--no_log_seg', default=True)
+@click.option('--output_integer_seg/--no_integer_seg', default=False)
 @click.option('--show_missing_hugo/--no_missing_hugo', default=False)
 @click.option('--show_missing_entrez/--no_missing_entrez', default=False)
 @click.option('--show_missing_both/--no_missing_both', default=False)
-def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir, show_missing_hugo, show_missing_entrez, show_missing_both):
+def main(gtf, hgnc, igv_segs, titan_segs, sample_id, output_dir, output_gistic_gene, output_integer_gene, output_log_seg, output_integer_seg, show_missing_hugo, show_missing_entrez, show_missing_both):
     extracted_file = extract(gtf, hgnc, igv_segs, titan_segs)
     gene_dict, seg_dict = transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both)
-    load(gene_dict, seg_dict, sample_id, output_dir)
+    load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene, output_integer_gene, output_log_seg, output_integer_seg)
 
 
 if __name__ == '__main__':
