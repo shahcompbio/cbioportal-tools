@@ -9,7 +9,7 @@ from collections import Counter
 # merge multiple gistic OR integer gene data text files
 def merge_gistic_gene_data(input_dir, output_dir):
     files_to_merge = [fn for fn in glob.glob(input_dir + '*.txt') if not os.path.basename(fn).startswith('merged')]
-    files_to_merge = sorted(files_to_merge, reverse=True)
+    files_to_merge = sorted(files_to_merge)
     files_with_issues = []
     dfs_to_merge = []
 
@@ -28,7 +28,7 @@ def merge_gistic_gene_data(input_dir, output_dir):
         print('Please fix or remove them and re-run the merge script.')
         return
 
-    merged_file = dfs_to_merge.pop()
+    merged_file = dfs_to_merge.pop(0)
     
     while dfs_to_merge:
         merged_file = pd.merge(merged_file, dfs_to_merge.pop(), on=['Hugo_Symbol', 'Entrez_Gene_Id'], how='outer')
@@ -40,7 +40,16 @@ def merge_gistic_gene_data(input_dir, output_dir):
 
 def merge_log_seg_data(input_dir, output_dir):
     # skip 1 line in each file after the first
-    pass
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg') if not os.path.basename(fn).startswith('merged')]
+    files_to_merge = sorted(files_to_merge)
+    
+    with open(output_dir + 'merged.seg', 'w+') as outfile:
+        with open(files_to_merge.pop(0)) as infile:
+            outfile.write(infile.read())
+        for file in files_to_merge:
+            with open(file) as infile:
+                next(infile)
+                outfile.write(infile.read())
 
 
 def merge_maf_data(input_dir, output_dir):
