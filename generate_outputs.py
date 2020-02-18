@@ -267,14 +267,14 @@ def load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene, output_
             integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
     
     if output_log_seg:
-        log_seg_data = open(output_dir + sample_id + '_log_seg_data.txt', 'w+')
+        log_seg_data = open(output_dir + sample_id + '_log_seg_data.seg', 'w+')
         log_seg_data.write(segment_header)
 
         for seg_length in seg_dict:
             log_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
     
     if output_integer_seg:
-        integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.txt', 'w+')
+        integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.seg', 'w+')
         integer_seg_data.write(segment_header)
 
         for seg_length in seg_dict:
