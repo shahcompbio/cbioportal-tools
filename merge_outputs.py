@@ -25,7 +25,7 @@ def merge_gistic_gene_data(input_dir, output_dir):
     if files_with_issues:
         print('The following list contains gistic gene data files that could not be merged:')
         print(files_with_issues)
-        print('Please fix or remove them and re-run the merge script.')
+        print('Please fix or remove them and rerun the merge script.')
         return
 
     merged_file = dfs_to_merge.pop(0)
@@ -39,29 +39,41 @@ def merge_gistic_gene_data(input_dir, output_dir):
 
 
 def merge_log_seg_data(input_dir, output_dir):
-    # skip 1 line in each file after the first
     files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg') if not os.path.basename(fn).startswith('merged')]
+    
+    if not files_to_merge:
+        print('No .seg files found. Please add some and rerun.')
+        return
+    
     files_to_merge = sorted(files_to_merge)
     
     with open(output_dir + 'merged.seg', 'w+') as outfile:
         with open(files_to_merge.pop(0)) as infile:
             outfile.write(infile.read())
+        
         for file in files_to_merge:
             with open(file) as infile:
+                # skip 1 line in each file after the first
                 next(infile)
                 outfile.write(infile.read())
 
 
 def merge_maf_data(input_dir, output_dir):
-    # skip 2 lines in each file after the first
     files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('merged')]
+    
+    if not files_to_merge:
+        print('No .maf files found. Please add some and rerun.')
+        return
+
     files_to_merge = sorted(files_to_merge)
     
     with open(output_dir + 'merged.maf', 'w+') as outfile:
         with open(files_to_merge.pop(0)) as infile:
             outfile.write(infile.read())
+        
         for file in files_to_merge:
             with open(file) as infile:
+                # skip 2 lines in each file after the first
                 for line in infile.readlines()[2:]:
                     outfile.write(line)
 
