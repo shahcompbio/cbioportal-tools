@@ -77,6 +77,8 @@ def convert(input_file, sample_id, hgnc):
     'sequence_feature&exon_loss_variant': 'Unknown'    # &exon_loss_variant
     }
 
+    header='#version 0.1\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
+
     # TODO: if not in the mapping, throw some kind of exception/warning
     
     hugo_entrez_mapping = {}
@@ -85,11 +87,6 @@ def convert(input_file, sample_id, hgnc):
         hugo_entrez_mapping[hugo] = entrez
 
     df = pd.read_csv(input_file, delimiter='\t', skiprows=124)
-
-
-# merge function
-def merge(output_dir):
-    header='Hugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short'
 
 
 @click.command()
@@ -101,8 +98,6 @@ def main(hgnc, input_dir, output_dir):
     for file in files_to_merge:
         sample_id = click.prompt('Please enter a sample id for ' + file)
         convert(file, sample_id, hgnc)
-
-    merge(output_dir)
 
 
 if __name__ == '__main__':

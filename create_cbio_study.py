@@ -17,11 +17,9 @@ import click
 import gzip
 import yaml
 
-import generate_outputs
-
-
-def converter(museq_vcf, sample_id, hgnc_file):
-    pass
+from convert_vcf_to_maf import convert
+from generate_outputs import extract, transform, load
+from merge_outputs import merge_gistic_gene_data, merge_log_seg_data, merge_maf_data, merge_all_data
 
 
 def filter(sample_id, museq_vcf, strelka_vcf, temp_dir):
@@ -71,28 +69,72 @@ def filter(sample_id, museq_vcf, strelka_vcf, temp_dir):
     return museq_filtered
 
 
-@click.command()
+cli = click.Group()
+
+@cli.command()
+@click.argument('input_file')
+@click.argument('sample_id')
+@click.argument('hgnc_file')
+@click.option('--output_dir', default='')
+def convert_vcf_to_maf(input_file, sample_id, hgnc_file, output_dir):
+    convert(input_file, sample_id, hgnc_file, output_dir)
+
+
+@cli.command()
+@click.argument('gtf_file')
+@click.argument('hgnc_file')
+@click.argument('titan_igv')
+@click.argument('titan_segs')
+@click.argument('sample_id')
+@click.option('--output_dir', default='')
+def main(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, output_dir): 
+    extracted_file = extract(gtf_file, hgnc_file, titan_igv, titan_segs)
+    gene_dict, seg_dict = transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
+    load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
+
+
+@cli.command()
+@click.option('--input_dir', default='')
+@click.option('--output_dir', default='')
+def merge_outputs(file_types, input_dir, output_dir):
+    if 'all' in file_types or Counter(file_types) == Counter(['gistic_gene', 'log_seg', 'maf']):
+        merge_all_data(input_dir, output_dir)
+        return
+    
+    if 'gistic_gene' in file_types:
+        merge_gistic_gene_data(input_dir, output_dir)
+
+    if 'log_seg' in file_types:
+        merge_log_seg_data(input_dir, output_dir)
+
+    if 'maf' in file_types:
+        merge_maf_data(input_dir, output_dir)
+
+
+@cli.command()
 @click.argument('input_yaml')
 @click.argument('path_to_output_study')
 @click.option('--temp_dir', default='')
 @click.option('--path_to_external_study')
-def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
+@click.pass_context
+def main(ctx, input_yaml, path_to_output_study, temp_dir, path_to_external_study):
     with open(input_yaml) as file:
         yaml_file = yaml.full_load(file)
-        
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         
         for patient, doc in yaml_file['patients'].items():
-            # print(patient)
             for sample, doc in doc.items():
                 museq_filtered = filter(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                
                 with gzip.open(museq_filtered, 'rt') as museq_vcf:
                     # TODO: write converter
-                    # converter(museq_filtered, sample, hgnc_file)
-                    pass
-                with gzip.open(doc['titan_igv_segs'], 'rt') as titan_igv_segs, gzip.open(doc['titan_segs_csv'], 'rt') as titan_segs_csv:
-                    generate_outputs(gtf_file, hgnc_file, titan_igv_segs, titan_segs_csv, sample, temp_dir)
+                    ctx.invoke(convert_vcf_to_maf, input_file=museq_filtered, sample_id=sample, hgnc_file=hgnc_file, output_dir=temp_dir)
+                
+                with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
+                    ctx.invoke(generate_outputs, gtf_file=gtf_file, hgnc_file=hgnc_file, titan_igv=titan_igv, titan_segs=titan_segs, sample_id=sample, output_dir=temp_dir)
+                
+                ctx.invoke(merge_outputs, input_dir=temp_dir, output_dir=temp_dir)
 
 
 if __name__ == '__main__':
