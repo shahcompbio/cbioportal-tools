@@ -54,7 +54,16 @@ def merge_log_seg_data(input_dir, output_dir):
 
 def merge_maf_data(input_dir, output_dir):
     # skip 2 lines in each file after the first
-    pass
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('merged')]
+    files_to_merge = sorted(files_to_merge)
+    
+    with open(output_dir + 'merged.maf', 'w+') as outfile:
+        with open(files_to_merge.pop(0)) as infile:
+            outfile.write(infile.read())
+        for file in files_to_merge:
+            with open(file) as infile:
+                for line in infile.readlines()[2:]:
+                    outfile.write(line)
 
 
 def merge_all_data(input_dir, output_dir):
