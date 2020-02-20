@@ -14,11 +14,13 @@ If multiple annotations tie for highest rank, pick one at random
 import click
 import csv
 import glob
+import numpy as np
+import os
 import pandas as pd
+import vcf
 
 
-# parse function
-def convert(input_file, sample_id, hgnc):
+def convert(input_file, sample_id, hgnc_file, output_dir):
     required_cols = [
     'Hugo_Symbol', # Gene_Name
     'Entrez_Gene_Id', # map from custom.txt
@@ -27,8 +29,11 @@ def convert(input_file, sample_id, hgnc):
     'HGVSp_Short', # HGVS.p
     ]
     
+    # TODO: if not in the mapping, throw warning, mark as 'Unknown'
     vcf_to_maf = {
-    'coding_sequence_variant': 'Missense_Mutation', # LOW, 'Unknown' if MODIFIER -> http://snpeff.sourceforge.net/SnpEff_manual.html
+    # LOW, 'Unknown' if MODIFIER
+    # Reference: http://snpeff.sourceforge.net/SnpEff_manual.html
+    'coding_sequence_variant': 'Missense_Mutation',
     'chromosome': 'Unknown',
     'duplication': 'Unknown',
     'inversion': 'Unknown',
@@ -39,7 +44,11 @@ def convert(input_file, sample_id, hgnc):
     'downstream_gene_variant': '3\'Flank',
     'exon_variant': 'Unknown',
     'exon_loss_variant': 'In_Frame_Del',
-    'frameshift_variant': 'Unknown',    # TODO: INS or DEL. In strelka INDEL SNVs, throw warning or exception here if this occurs
+    # TODO: INS or DEL. Throw warning here if this occurs
+    # (it probably shouldn't outside of strelka INDEL SNVs)
+    # if REF > ALT it's a DEL, if REF < ALT it's an INS
+    # DEL = Frame_Shift_Del here, INS = Frame_Shift_Ins here
+    'frameshift_variant': 'Unknown',
     'gene_variant': 'Unknown',
     'feature_ablation': 'Unknown',
     'gene_fusion': 'Unknown',
@@ -71,33 +80,40 @@ def convert(input_file, sample_id, hgnc):
     'regulatory_region_variant': 'Unknown',
     'upstream_gene_variant': '5\'Flank',
     '3_prime_UTR_variant': '3\'UTR',
-    '3_prime_UTR_truncation&exon_loss': '3\'UTR',   # &exon_loss
+    '3_prime_UTR_truncation&exon_loss': '3\'UTR',
     '5_prime_UTR_variant': '5\'UTR',  
-    '5_prime_UTR_truncation&exon_loss_variant': '5 \'UTR', # &exon_loss_variant
-    'sequence_feature&exon_loss_variant': 'Unknown'    # &exon_loss_variant
+    '5_prime_UTR_truncation&exon_loss_variant': '5 \'UTR',
+    'sequence_feature&exon_loss_variant': 'Unknown'
     }
 
-    header='#version 0.1\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
+    header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
+    output_filename = os.path.splitext(input_file)[0].split('/')[-1] + '.maf'
 
-    # TODO: if not in the mapping, throw some kind of exception/warning
-    
     hugo_entrez_mapping = {}
-    df = pd.read_csv(hgnc, delimiter='\t', dtype={'NCBI Gene ID': str})
+    df = pd.read_csv(hgnc_file, delimiter='\t', dtype={'NCBI Gene ID': str})
+    df = df.replace(np.nan, '')
     for hugo, entrez in zip(df['Approved symbol'], df['NCBI Gene ID']):
         hugo_entrez_mapping[hugo] = entrez
 
-    df = pd.read_csv(input_file, delimiter='\t', skiprows=124)
+    vcf_reader = vcf.Reader(open(input_file, 'r'))
+    for record in vcf_reader:
+        record.REF
+        record.ALT  # list of length 1, take length of first item
+        for item in record.INFO['ANN']:
+            spl = item.split('|')
+            spl[1]  # Annotation
+            spl[2]  # Annotation_Impact 
+            spl[3]  # Gene_Name
+            spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
 
 
 @click.command()
-@click.option('--hgnc', default='custom.txt')
-@click.option('--input_dir', default='')
+@click.argument('input_file')
+@click.argument('sample_id')
+@click.argument('hgnc_file')
 @click.option('--output_dir', default='')
-def main(hgnc, input_dir, output_dir):
-    files_to_merge = glob.glob(input_dir + '*.vcf')
-    for file in files_to_merge:
-        sample_id = click.prompt('Please enter a sample id for ' + file)
-        convert(file, sample_id, hgnc)
+def main(input_file, sample_id, hgnc_file, output_dir):
+    convert(input_file, sample_id, hgnc_file, output_dir)
 
 
 if __name__ == '__main__':
