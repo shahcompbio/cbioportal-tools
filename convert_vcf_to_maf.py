@@ -14,6 +14,7 @@ If multiple annotations tie for highest rank, pick one at random
 import click
 import csv
 import glob
+import logging
 import numpy as np
 import os
 import pandas as pd
@@ -31,12 +32,12 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     ]
     
     # TODO: if not in the mapping, throw warning, mark as 'Unknown'
-    vcf_to_maf = {
+    ann_mapping = {
     # 'Missense_Mutation' if LOW, 'Unknown' if MODIFIER
     # Reference:
     # http://snpeff.sourceforge.net/SnpEff_manual.html ->
     # https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
-    'coding_sequence_variant': 'Missense_Mutation',
+    # 'coding_sequence_variant': 'Missense_Mutation',
     'chromosome': 'Unknown',
     'duplication': 'Unknown',
     'inversion': 'Unknown',
@@ -51,7 +52,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     # (it probably shouldn't outside of strelka INDEL SNVs)
     # if REF > ALT it's a DEL, if REF < ALT it's an INS
     # DEL = Frame_Shift_Del here, INS = Frame_Shift_Ins here
-    'frameshift_variant': 'Unknown',
+    # 'frameshift_variant': 'Unknown',
     'gene_variant': 'Unknown',
     'feature_ablation': 'Unknown',
     'gene_fusion': 'Unknown',
@@ -103,31 +104,78 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
 
     vcf_reader = vcf.Reader(open(input_file, 'r'))
     for record in vcf_reader:
-        record.REF
-        record.ALT  # list of length 1, take length of first item
+        ref = record.REF
+        alt = record.ALT  # list of length 1, take length of first item
         
         record_annotations = [item.split('|')[1].split('&')[0] for item in record.INFO['ANN']]
         if 'missense_variant' in record_annotations:
             ann_index = random.choice([i for i, e in enumerate(record_annotations) if e == 'missense_variant'])
-            ann_record = record.INFO['ANN'][ann_index].split('|')
-            hugo_symbol = ann_record[3]
+            variant_classification = 'Missense_Mutation'
             
-            if hugo_symbol in hugo_entrez_mapping:
-                entrez_gene_id = hugo_entrez_mapping[hugo_symbol]
-            else:
-                entrez_gene_id = ''
-
-            hgvsp_short = ann_record[10]
-            
-            output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\tMissense_Mutation\t' + hgvsp_short + '\n')
         else:
+            record_impacts = [item.split('|')[2] for item in record.INFO['ANN']]
             
-            for item in record.INFO['ANN']:
-                spl = item.split('|')
-                spl_ann = spl[1].split('&')[0]  # Annotation
-                spl[2]  # Annotation_Impact 
-                spl[3]  # Gene_Name
-                spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
+            if 'HIGH' in record_impacts:
+                impact = 'HIGH'
+            elif 'MODERATE' in record_impacts:
+                impact = 'MODERATE'
+            elif 'LOW' in record_impacts:
+                impact = 'LOW'
+            elif 'MODIFIER' in record_impacts:
+                impact = 'MODIFIER'
+            else:
+                logging.warning(f'{record} has no annotation impacts. Skipping record.')
+                continue
+
+            ann_index = random.choice([i for i, e in enumerate(record_impacts) if e == impact])
+            annotation = record.INFO['ANN'][ann_index].split('|')[1].split('&')[0]
+
+            if annotation == 'coding_sequence_variant':
+                ann_impact = record.INFO['ANN'][ann_index].split('|')[2]
+                
+                if ann_impact == 'LOW':
+                    variant_classification = 'Missense_Mutation'
+                elif ann_impact == 'MODIFIER':
+                    variant_classification = 'Unknown'
+                else:
+                    logging.warning(f'A variant_classification for {annotation} with impact {ann_impact} was not found.')
+                    variant_classification = 'Unknown'
+
+            elif annotation == 'frameshift_variant':
+                if len(ref) != len(alt[0]):
+                    logging.warning(f'{record} has REF and ALT with unequal lengths')
+                    if len(ref) > len(alt[0]):
+                        variant_classification = 'Frame_Shift_Del'
+                    elif len(ref) < len(alt[0]):
+                        variant_classification = 'Frame_Shift_Ins'
+                else:
+                    variant_classification = 'Unknown'
+            else:
+                if annotation in ann_mapping:
+                    variant_classification = ann_mapping[annotation]
+                else:
+                    logging.warning(f'A variant_classification for {annotation} was not found.')
+                    variant_classification = 'Unknown'
+
+        record_ann = record.INFO['ANN'][ann_index].split('|')
+        hugo_symbol = record_ann[3]
+        
+        if hugo_symbol in hugo_entrez_mapping:
+            entrez_gene_id = hugo_entrez_mapping[hugo_symbol]
+        else:
+            entrez_gene_id = ''
+
+        hgvsp_short = record_ann[10]
+            
+        output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\t' + variant_classification +'\t' + hgvsp_short + '\n')
+            
+        # sample code
+        for item in record.INFO['ANN']:
+            spl = item.split('|')
+            spl_ann = spl[1].split('&')[0]  # Annotation
+            spl[2]  # Annotation_Impact 
+            spl[3]  # Gene_Name
+            spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
 
 
 @click.command()
