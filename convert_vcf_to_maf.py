@@ -17,6 +17,7 @@ import glob
 import numpy as np
 import os
 import pandas as pd
+import random
 import vcf
 
 
@@ -31,8 +32,10 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     
     # TODO: if not in the mapping, throw warning, mark as 'Unknown'
     vcf_to_maf = {
-    # LOW, 'Unknown' if MODIFIER
-    # Reference: http://snpeff.sourceforge.net/SnpEff_manual.html
+    # 'Missense_Mutation' if LOW, 'Unknown' if MODIFIER
+    # Reference:
+    # http://snpeff.sourceforge.net/SnpEff_manual.html ->
+    # https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
     'coding_sequence_variant': 'Missense_Mutation',
     'chromosome': 'Unknown',
     'duplication': 'Unknown',
@@ -44,7 +47,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'downstream_gene_variant': '3\'Flank',
     'exon_variant': 'Unknown',
     'exon_loss_variant': 'In_Frame_Del',
-    # TODO: INS or DEL. Throw warning here if this occurs
+    # TODO: INS or DEL. Throw warning here if REF != ALT
     # (it probably shouldn't outside of strelka INDEL SNVs)
     # if REF > ALT it's a DEL, if REF < ALT it's an INS
     # DEL = Frame_Shift_Del here, INS = Frame_Shift_Ins here
@@ -80,14 +83,17 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'regulatory_region_variant': 'Unknown',
     'upstream_gene_variant': '5\'Flank',
     '3_prime_UTR_variant': '3\'UTR',
-    '3_prime_UTR_truncation&exon_loss': '3\'UTR',
+    '3_prime_UTR_truncation': '3\'UTR', # &exon_loss
     '5_prime_UTR_variant': '5\'UTR',  
-    '5_prime_UTR_truncation&exon_loss_variant': '5 \'UTR',
-    'sequence_feature&exon_loss_variant': 'Unknown'
+    '5_prime_UTR_truncation': '5 \'UTR',    # &exon_loss_variant
+    'sequence_feature': 'Unknown'   # &exon_loss_variant
     }
 
-    header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
     output_filename = os.path.splitext(input_file)[0].split('/')[-1] + '.maf'
+    output_file = open(output_dir + output_filename, 'w+')
+
+    output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
+    output_file.write(output_header)
 
     hugo_entrez_mapping = {}
     df = pd.read_csv(hgnc_file, delimiter='\t', dtype={'NCBI Gene ID': str})
@@ -99,12 +105,29 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     for record in vcf_reader:
         record.REF
         record.ALT  # list of length 1, take length of first item
-        for item in record.INFO['ANN']:
-            spl = item.split('|')
-            spl[1]  # Annotation
-            spl[2]  # Annotation_Impact 
-            spl[3]  # Gene_Name
-            spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
+        
+        record_annotations = [item.split('|')[1].split('&')[0] for item in record.INFO['ANN']]
+        if 'missense_variant' in record_annotations:
+            ann_index = random.choice([i for i, e in enumerate(record_annotations) if e == 'missense_variant'])
+            ann_record = record.INFO['ANN'][ann_index].split('|')
+            hugo_symbol = ann_record[3]
+            
+            if hugo_symbol in hugo_entrez_mapping:
+                entrez_gene_id = hugo_entrez_mapping[hugo_symbol]
+            else:
+                entrez_gene_id = ''
+
+            hgvsp_short = ann_record[10]
+            
+            output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\tMissense_Mutation\t' + hgvsp_short + '\n')
+        else:
+            
+            for item in record.INFO['ANN']:
+                spl = item.split('|')
+                spl_ann = spl[1].split('&')[0]  # Annotation
+                spl[2]  # Annotation_Impact 
+                spl[3]  # Gene_Name
+                spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
 
 
 @click.command()
