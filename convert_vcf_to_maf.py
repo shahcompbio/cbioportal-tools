@@ -168,14 +168,6 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
         hgvsp_short = record_ann[10]
             
         output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\t' + variant_classification +'\t' + hgvsp_short + '\n')
-            
-        # sample code
-        for item in record.INFO['ANN']:
-            spl = item.split('|')
-            spl_ann = spl[1].split('&')[0]  # Annotation
-            spl[2]  # Annotation_Impact 
-            spl[3]  # Gene_Name
-            spl[10] # HGVS.p, missing often in twins. SnpEFF docs?
 
 
 @click.command()
