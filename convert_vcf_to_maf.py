@@ -1,13 +1,33 @@
 '''
-http://snpeff.sourceforge.net/SnpEff_manual.html
-https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
-https://svn.bcgsc.ca/bitbucket/projects/KRONOS/repos/convert_vcf_to_maf/browse/component_seed/vcf2maf/vcf2maf-master/vcf2maf_museq.pl
+References:
+1. http://snpeff.sourceforge.net/SnpEff_manual.html
+2. https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
+3. https://svn.bcgsc.ca/bitbucket/projects/KRONOS/repos/convert_vcf_to_maf/browse/component_seed/vcf2maf/vcf2maf-master/vcf2maf_museq.pl
 
-if two or more annotations in .vcf Annotation column, take first one (maybe related to "most deleterious" as shown here: http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf)
+If two or more annotations in .vcf Annotation column, take first one
+(maybe related to "most deleterious" as shown here:
+http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf)
 
-Impact prediction:
+Annotation_Impact (impact prediction):
 HIGH > MODERATE > LOW > MODIFIER
-If Annotation column in .vcf is 'missense_variant', treat as highest rank (above HIGH) (https://github.com/shahcompbio/scgenome/pull/16)
+
+If Annotation column in .vcf record INFO column is 'missense_variant'
+treat as highest rank (above HIGH)
+(https://github.com/shahcompbio/scgenome/pull/16)
+
+If Annotation column is 'coding_sequence_variant':
+if Annotation_Impact is 'LOW', map to 'Missense_Mutation',
+if Annotation_Impact is 'MODIFIER', map to 'Unknown'
+Reference: link #2
+
+If Annotation column is 'frameshift_variant':
+inspect REF and ALT .vcf columns and ompare number of characters
+if REF > ALT map to Frame_Shift_Del,
+if REF < ALT map to Frame_Shift_Ins,
+otherwise map to 'Unknown'
+REF and ALT length should be the same outside of strelka INDEL SNVs
+Reference: Diljot Grewal
+
 If multiple annotations tie for highest rank, pick one at random
 '''
 
@@ -23,21 +43,16 @@ import vcf
 
 
 def convert(input_file, sample_id, hgnc_file, output_dir):
-    required_cols = [
-    'Hugo_Symbol', # Gene_Name
-    'Entrez_Gene_Id', # map from custom.txt
-    'Tumor_Sample_Barcode', # user input
-    'Variant_Classification',  # need to develop mapping (Annotation)
-    'HGVSp_Short', # HGVS.p
-    ]
+    '''
+    required columns:
+    'Hugo_Symbol' (Gene_Name)
+    'Entrez_Gene_Id' (map from custom.txt)
+    'Tumor_Sample_Barcode' (user input)
+    'Variant_Classification' (from Annotation and ann_mapping dict)
+    'HGVSp_Short' (HGVS.p)
+    '''
     
-    # TODO: if not in the mapping, throw warning, mark as 'Unknown'
     ann_mapping = {
-    # 'Missense_Mutation' if LOW, 'Unknown' if MODIFIER
-    # Reference:
-    # http://snpeff.sourceforge.net/SnpEff_manual.html ->
-    # https://github.com/cbare/vcf2maf/blob/master/vcf2maf/vcf2maf.py
-    # 'coding_sequence_variant': 'Missense_Mutation',
     'chromosome': 'Unknown',
     'duplication': 'Unknown',
     'inversion': 'Unknown',
@@ -48,11 +63,6 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'downstream_gene_variant': '3\'Flank',
     'exon_variant': 'Unknown',
     'exon_loss_variant': 'In_Frame_Del',
-    # TODO: INS or DEL. Throw warning here if REF != ALT
-    # (it probably shouldn't outside of strelka INDEL SNVs)
-    # if REF > ALT it's a DEL, if REF < ALT it's an INS
-    # DEL = Frame_Shift_Del here, INS = Frame_Shift_Ins here
-    # 'frameshift_variant': 'Unknown',
     'gene_variant': 'Unknown',
     'feature_ablation': 'Unknown',
     'gene_fusion': 'Unknown',
@@ -86,8 +96,8 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     '3_prime_UTR_variant': '3\'UTR',
     '3_prime_UTR_truncation': '3\'UTR', # &exon_loss
     '5_prime_UTR_variant': '5\'UTR',  
-    '5_prime_UTR_truncation': '5 \'UTR',    # &exon_loss_variant
-    'sequence_feature': 'Unknown'   # &exon_loss_variant
+    '5_prime_UTR_truncation': '5 \'UTR', # &exon_loss_variant
+    'sequence_feature': 'Unknown' # &exon_loss_variant
     }
 
     output_filename = os.path.splitext(input_file)[0].split('/')[-1] + '.maf'
@@ -105,15 +115,15 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     vcf_reader = vcf.Reader(open(input_file, 'r'))
     for record in vcf_reader:
         ref = record.REF
-        alt = record.ALT  # list of length 1, take length of first item
+        alt = record.ALT # list of length 1, take length of first item
         
-        record_annotations = [item.split('|')[1].split('&')[0] for item in record.INFO['ANN']]
+        record_annotations = [ann.split('|')[1].split('&')[0] for ann in record.INFO['ANN']]
         if 'missense_variant' in record_annotations:
             ann_index = random.choice([i for i, e in enumerate(record_annotations) if e == 'missense_variant'])
             variant_classification = 'Missense_Mutation'
             
         else:
-            record_impacts = [item.split('|')[2] for item in record.INFO['ANN']]
+            record_impacts = [ann.split('|')[2] for ann in record.INFO['ANN']]
             
             if 'HIGH' in record_impacts:
                 impact = 'HIGH'
