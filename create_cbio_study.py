@@ -23,14 +23,35 @@ import yaml
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
 from generate_outputs import extract, transform, load
 from merge_outputs import merge_all_data as merge_outputs
+from pathlib import Path
 
 
-def merge_studies(path_to_output_study, path_to_external_study, output_dir)
+def merge_studies(path_to_output_study, path_to_external_study, output_dir):
     pass
 
 
-def create_study(work_dir, path_to_output_study):
-    pass
+def create_study(path_to_output_study):
+    '''
+    data_CNA.txt, data_cna_hg19.seg, data_mutations.maf exist
+    (in path_to_output_study)
+
+    Please see cbioportal/docs/File-Formats.md on GitHub for examples
+    '''
+    
+    meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
+    
+    type_of_cancer = click.prompt('Please enter type of cancer (ex: ovary, brca)')
+    cancer_study_indentifier = click.prompt('Please enter a cancer study identifier (ex: twins_shahlab_2020)')
+    name = click.prompt('Please enter a name (ex: TWINS (Shah Lab, 2020))')
+    description = click.prompt('Please enter a description (ex: Mutation data in TWINS cases)')
+    short_name = click.prompt('Please enter a short name (ex: TWINS (Shahlab))')
+    
+    meta_study.write('type_of_cancer: ' + type_of_cancer + '\n' \
+                    + 'cancer_study_identifier: ' + cancer_study_indentifier + '\n' \
+                    + 'name: ' + name + '\n' \
+                    + 'description: ' + description + '\n' \
+                    + 'short_name: ' + short_name + '\n' \
+                    + 'add_global_case_list: true')
 
 
 def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, output_dir): 
@@ -109,8 +130,9 @@ def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
                 with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
                     generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)
                 
-    merge_outputs(temp_dir, temp_dir)
-    create_study(temp_dir, path_to_output_study)
+    Path('path_to_output_study').mkdir(parents=True, exist_ok=True)
+    merge_outputs(temp_dir, path_to_output_study)
+    create_study(path_to_output_study)
 
     if path_to_external_study:
         merge_studies(path_to_output_study, path_to_external_study, path_to_merged_study)
