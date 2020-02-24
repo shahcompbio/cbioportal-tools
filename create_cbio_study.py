@@ -30,28 +30,84 @@ def merge_studies(path_to_output_study, path_to_external_study, output_dir):
     pass
 
 
-def create_study(path_to_output_study):
+def create_study(patient_yaml, path_to_output_study):
     '''
     data_CNA.txt, data_cna_hg19.seg, data_mutations.maf exist
     (in path_to_output_study)
 
     Please see cbioportal/docs/File-Formats.md on GitHub for examples
     '''
-    
+
     meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
     
-    type_of_cancer = click.prompt('Please enter type of cancer (ex: ovary, brca)')
-    cancer_study_indentifier = click.prompt('Please enter a cancer study identifier (ex: twins_shahlab_2020)')
-    name = click.prompt('Please enter a name (ex: TWINS (Shah Lab, 2020))')
-    description = click.prompt('Please enter a description (ex: Mutation data in TWINS cases)')
-    short_name = click.prompt('Please enter a short name (ex: TWINS (Shahlab))')
+    type_of_cancer = click.prompt('Please enter type of cancer', default='ovary')
+    cancer_study_identifier = click.prompt('Please enter a cancer study identifier', default='twins_shahlab_2020')
+    name = click.prompt('Please enter a name', default='TWINS (Shah Lab, 2020)')
+    description = click.prompt('Please enter a description', default='Mutation data in TWINS cases')
+    short_name = click.prompt('Please enter a short name', default='TWINS (Shahlab)')
     
     meta_study.write('type_of_cancer: ' + type_of_cancer + '\n' \
-                    + 'cancer_study_identifier: ' + cancer_study_indentifier + '\n' \
+                    + 'cancer_study_identifier: ' + cancer_study_identifier + '\n' \
                     + 'name: ' + name + '\n' \
                     + 'description: ' + description + '\n' \
                     + 'short_name: ' + short_name + '\n' \
-                    + 'add_global_case_list: true')
+                    + 'add_global_case_list: true\n')
+
+    meta_mutations_extended = open(path_to_output_study + 'meta_mutations_extended.txt', 'w+')
+    # TODO
+
+    meta_CNA = open(path_to_output_study + 'meta_CNA.txt', 'w+')
+    # TODO
+    
+    meta_cna_seg = open(path_to_output_study + 'meta_cna_seg.txt', 'w+')
+    # TODO
+    
+    meta_clinical_sample = open(path_to_output_study + 'meta_clinical_sample.txt', 'w+')
+    # TODO
+    
+    data_clinical_sample = open(path_to_output_study + 'data_clinical_sample.txt', 'w+')
+    data_clinical_sample.write('#Patient Identifier\tSample Identifier\tCancer Type\n' \
+                    + '#Patient Identifier\tSample Identifier\tCancer Type description\n' \
+                    + '#STRING\tSTRING\tSTRING\n' \
+                    + '#1\t1\t1\n' \
+                    + '#PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
+    
+    case_list_ids = []
+    for patient, doc in patient_yaml.items():
+        for sample, _ in doc.items():
+            data_clinical_sample.write(patient + '\t' + sample + '\t' + type_of_cancer.upper() + '\n')
+            case_list_ids.append(sample)
+    
+    Path(path_to_output_study + 'case_lists/').mkdir(parents=True, exist_ok=True)
+
+    cases_cna = open(path_to_output_study + 'case_lists/cases_cna.txt', 'w+')
+    cases_cna.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'stable_id: ' + cancer_study_identifier + '_cna\n' \
+                    + 'case_list_name: Samples profiled for mutations\n' \
+                    + 'case_list_description: Samples profiled for mutations\n' \
+                    + 'case_list_ids: ')
+
+    cases_cnaseq = open(path_to_output_study + 'case_lists/cases_cnaseq.txt', 'w+')
+    cases_cnaseq.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'stable_id: ' + cancer_study_identifier + '_cna\n' \
+                    + 'case_list_name: Sequenced samples profiled for mutations\n' \
+                    + 'case_list_description: Sequenced samples profiled for mutations\n' \
+                    + 'case_list_ids: ')
+
+    cases_sequenced = open(path_to_output_study + 'case_lists/cases_sequenced.txt', 'w+')
+    cases_sequenced.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'stable_id: ' + cancer_study_identifier + '_cna\n' \
+                    + 'case_list_name: All sequenced samples\n' \
+                    + 'case_list_description: All sequenced samples\n' \
+                    + 'case_list_ids: ')
+
+    for sample_id in case_list_ids[:-1]:
+        cases_cna.write(sample_id + '\t')
+        cases_cnaseq.write(sample_id + '\t')
+        cases_sequenced.write(sample_id + '\t')
+    
+    for file in [cases_cna, cases_cnaseq, cases_sequenced]:
+        file.write(case_list_ids[-1] + '\n')
 
 
 def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, output_dir): 
@@ -119,7 +175,7 @@ def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         
-        for patient, doc in yaml_file['patients'].items():
+        for _, doc in yaml_file['patients'].items():
             for sample, doc in doc.items():
                 museq_filtered = filter(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
                 
@@ -130,9 +186,9 @@ def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
                 with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
                     generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)
                 
-    Path('path_to_output_study').mkdir(parents=True, exist_ok=True)
-    merge_outputs(temp_dir, path_to_output_study)
-    create_study(path_to_output_study)
+        Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
+        merge_outputs(temp_dir, path_to_output_study)
+        create_study(yaml_file['patients'], path_to_output_study)
 
     if path_to_external_study:
         merge_studies(path_to_output_study, path_to_external_study, path_to_merged_study)
