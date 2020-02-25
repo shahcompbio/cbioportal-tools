@@ -59,7 +59,7 @@ def merge_log_seg_data(input_dir, output_dir):
 
 
 def merge_maf_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('data_mutations')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('data_mutations_extended')]
     
     if not files_to_merge:
         print('No .maf files found. Please add some and rerun.')
@@ -67,7 +67,7 @@ def merge_maf_data(input_dir, output_dir):
 
     files_to_merge = sorted(files_to_merge)
     
-    with open(output_dir + 'data_mutations.maf', 'w+') as outfile:
+    with open(output_dir + 'data_mutations_extended.maf', 'w+') as outfile:
         with open(files_to_merge.pop(0)) as infile:
             outfile.write(infile.read())
         

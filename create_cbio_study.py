@@ -32,13 +32,11 @@ def merge_studies(path_to_output_study, path_to_external_study, output_dir):
 
 def create_study(patient_yaml, path_to_output_study):
     '''
-    data_CNA.txt, data_cna_hg19.seg, data_mutations.maf exist
+    data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
     (in path_to_output_study)
 
     Please see cbioportal/docs/File-Formats.md on GitHub for examples
     '''
-
-    meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
     
     type_of_cancer = click.prompt('Please enter type of cancer', default='ovary')
     cancer_study_identifier = click.prompt('Please enter a cancer study identifier', default='twins_shahlab_2020')
@@ -46,6 +44,7 @@ def create_study(patient_yaml, path_to_output_study):
     description = click.prompt('Please enter a description', default='Mutation data in TWINS cases')
     short_name = click.prompt('Please enter a short name', default='TWINS (Shahlab)')
     
+    meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
     meta_study.write('type_of_cancer: ' + type_of_cancer + '\n' \
                     + 'cancer_study_identifier: ' + cancer_study_identifier + '\n' \
                     + 'name: ' + name + '\n' \
@@ -54,16 +53,38 @@ def create_study(patient_yaml, path_to_output_study):
                     + 'add_global_case_list: true\n')
 
     meta_mutations_extended = open(path_to_output_study + 'meta_mutations_extended.txt', 'w+')
-    # TODO
+    meta_mutations_extended.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'genetic_alteration_type: MUTATION_EXTENDED\n' \
+                    + 'datatype: MAF\n' \
+                    + 'stable_id: mutations\n' \
+                    + 'show_profile_in_analysis_tab: true\n' \
+                    + 'profile_name: Mutations\n' \
+                    + 'profile_description: Mutation data.\n' \
+                    + 'data_filename: data_mutations_extended.maf\n')
 
     meta_CNA = open(path_to_output_study + 'meta_CNA.txt', 'w+')
-    # TODO
+    meta_CNA.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'genetic_alteration_type: COPY_NUMBER_ALTERATION\n' \
+                    + 'datatype: DISCRETE\n' \
+                    + 'stable_id: gistic\n' \
+                    + 'show_profile_in_analysis_tab: true\n' \
+                    + 'profile_name: Copy-number values\n' \
+                    + 'profile_description: Copy-number values for each gene.\n' \
+                    + 'data_filename: data_CNA.txt\n')
     
     meta_cna_seg = open(path_to_output_study + 'meta_cna_seg.txt', 'w+')
-    # TODO
+    meta_cna_seg.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'genetic_alteration_type: COPY_NUMBER_ALTERATION\n' \
+                    + 'datatype: SEG\n' \
+                    + 'reference_genome_id: hg19\n' \
+                    + 'description: CNA data.\n' \
+                    + 'data_filename: data_cna_hg19.seg\n')
     
     meta_clinical_sample = open(path_to_output_study + 'meta_clinical_sample.txt', 'w+')
-    # TODO
+    meta_clinical_sample.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
+                    + 'genetic_alteration_type: CLINICAL\n' \
+                    + 'datatype: SAMPLE_ATTRIBUTES\n' \
+                    + 'data_filename: data_clinical_sample.txt\n')
     
     data_clinical_sample = open(path_to_output_study + 'data_clinical_sample.txt', 'w+')
     data_clinical_sample.write('#Patient Identifier\tSample Identifier\tCancer Type\n' \
