@@ -33,8 +33,8 @@ def merge_gistic_gene_data(input_dir, output_dir):
     while dfs_to_merge:
         merged_file = pd.merge(merged_file, dfs_to_merge.pop(), on=['Hugo_Symbol', 'Entrez_Gene_Id'], how='outer')
 
+    merged_file[['Entrez_Gene_Id']] = merged_file[['Entrez_Gene_Id']].replace(np.nan, '')
     merged_file = merged_file.replace(np.nan, 'NA')
-    merged_file = merged_file.replace('nan', '')
     merged_file.to_csv(output_dir + 'data_CNA.txt', index=None, sep='\t')
 
 

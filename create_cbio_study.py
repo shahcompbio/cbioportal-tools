@@ -53,6 +53,7 @@ def create_study(patient_yaml, path_to_output_study):
                     + 'show_profile_in_analysis_tab: true\n' \
                     + 'profile_name: Mutations\n' \
                     + 'profile_description: Mutation data.\n' \
+                    + 'variant_classification_filter:\n' \
                     + 'data_filename: data_mutations_extended.maf\n')
 
     meta_CNA = open(path_to_output_study + 'meta_CNA.txt', 'w+')
