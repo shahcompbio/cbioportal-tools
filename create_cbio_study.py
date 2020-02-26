@@ -1,20 +1,16 @@
 '''
-    for each section in yaml, perform:
-        filtering ✔
-        run cn data output generator ✔
-        conversion to maf
+for each section in yaml, perform:
+    filtering ✔
+    run cn data output generator ✔
+    conversion to maf ✔
 
-    afterwards:
-        merge mafs ✔
-        merge gistic gene results ✔
-        merge log seg data results ✔
-        create cBio stidy meta files/connect to data files properly
+afterwards:
+    merge mafs ✔
+    merge gistic gene results ✔
+    merge log seg data results ✔
+    create cBio stidy meta files/connect to data files properly ✔
 
-    merge wgs with impact data?
-    idea:   take two existing studies and compare files to see if any
-            any overlap, take new description, name etc. as user
-            input and merge exisitng non-overlapping data.
-    '''
+'''
 
 import click
 import gzip
@@ -26,12 +22,9 @@ from merge_outputs import merge_all_data as merge_outputs
 from pathlib import Path
 
 
-def merge_studies(path_to_output_study, path_to_external_study, output_dir):
-    pass
-
-
 def create_study(patient_yaml, path_to_output_study):
     '''
+    prerequisites:
     data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
     (in path_to_output_study)
 
@@ -137,12 +130,13 @@ def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, outp
     load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
 
 
-def filter(sample_id, museq_vcf, strelka_vcf, work_dir):
+def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
     '''
     original code by Diljot Grewal
 
-    required mofifications (done): take museq and strelka directly as input, output to temp_dir
-    strip sample id from inputs and append to output filtered file
+    modifications: take museq and strelka directly as input, output
+    to temp_dir, take sample id as input and append to output
+    filtered filename
     '''
 
     museq_filtered = work_dir + '{}_museq_filtered.vcf.gz'.format(sample_id)
@@ -187,32 +181,31 @@ def filter(sample_id, museq_vcf, strelka_vcf, work_dir):
 @click.command()
 @click.argument('input_yaml')
 @click.argument('path_to_output_study')
-@click.option('--temp_dir', default='')
-@click.option('--path_to_external_study')
-@click.option('--path_to_merged_study')
-def main(input_yaml, path_to_output_study, temp_dir, path_to_external_study):
+@click.argument('temp_dir')
+def main(input_yaml, path_to_output_study, temp_dir):
+    if not path_to_output_study.endswith('/'):
+        path_to_output_study = path_to_output_study + '/'
+    if not temp_dir.endswith('/'):
+        temp_dir = temp_dir + '/'
+
+    Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
+
     with open(input_yaml) as file:
         yaml_file = yaml.full_load(file)
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         
-        for _, doc in yaml_file['patients'].items():
-            for sample, doc in doc.items():
-                museq_filtered = filter(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                
-                with gzip.open(museq_filtered, 'rt') as museq_vcf:
-                    # TODO: write converter
-                    convert_vcf_to_maf(museq_vcf, sample, hgnc_file, temp_dir)
-                
-                with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
-                    generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)
-                
-        Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
-        merge_outputs(temp_dir, path_to_output_study)
         create_study(yaml_file['patients'], path_to_output_study)
 
-    if path_to_external_study:
-        merge_studies(path_to_output_study, path_to_external_study, path_to_merged_study)
+        for _, doc in yaml_file['patients'].items():
+            for sample, doc in doc.items():
+                museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
+                
+                with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
+                    generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
+        
+    merge_outputs(temp_dir, path_to_output_study)    
 
 
 if __name__ == '__main__':

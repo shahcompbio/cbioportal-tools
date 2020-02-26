@@ -45,11 +45,11 @@ import vcf
 def convert(input_file, sample_id, hgnc_file, output_dir):
     '''
     required columns:
-    'Hugo_Symbol' (Gene_Name)
-    'Entrez_Gene_Id' (map from custom.txt)
-    'Tumor_Sample_Barcode' (user input)
-    'Variant_Classification' (from Annotation and ann_mapping dict)
-    'HGVSp_Short' (HGVS.p)
+        'Hugo_Symbol' (Gene_Name)
+        'Entrez_Gene_Id' (map from custom.txt)
+        'Tumor_Sample_Barcode' (user input)
+        'Variant_Classification' (from Annotation and ann_mapping dict)
+        'HGVSp_Short' (HGVS.p)
     '''
     
     ann_mapping = {
@@ -100,7 +100,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'sequence_feature': 'Unknown' # &exon_loss_variant
     }
 
-    output_filename = os.path.splitext(input_file)[0].split('/')[-1] + '.maf'
+    output_filename = os.path.splitext(os.path.splitext(input_file)[0])[0].split('/')[-1] + '.maf'
     output_file = open(output_dir + output_filename, 'w+')
 
     output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
@@ -111,8 +111,10 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     df = df.replace(np.nan, '')
     for hugo, entrez in zip(df['Approved symbol'], df['NCBI Gene ID']):
         hugo_entrez_mapping[hugo] = entrez
+    
+    logging.info(f'Running conversion for sample {sample_id}.')
 
-    vcf_reader = vcf.Reader(open(input_file, 'r'))
+    vcf_reader = vcf.Reader(filename=input_file)
     for record in vcf_reader:
         ref = record.REF
         alt = record.ALT # list of length 1, take length of first item
@@ -153,7 +155,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
 
             elif annotation == 'frameshift_variant':
                 if len(ref) != len(alt[0]):
-                    logging.warning(f'{record} has REF and ALT with unequal lengths')
+                    logging.warning(f'{record} has REF and ALT with unequal lengths!')
                     if len(ref) > len(alt[0]):
                         variant_classification = 'Frame_Shift_Del'
                     elif len(ref) < len(alt[0]):
@@ -178,6 +180,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
         hgvsp_short = record_ann[10]
             
         output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\t' + variant_classification +'\t' + hgvsp_short + '\n')
+        logging.info(f'Conversion finished for sample {sample_id}.')
 
 
 @click.command()

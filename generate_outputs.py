@@ -14,14 +14,13 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
-    igv_file = open(igv_segs, 'r')
-    next(igv_file)
-    igv_reader = csv.reader(igv_file, delimiter='\t')
+    # igv_file = open(igv_segs, 'r')
+    next(igv_segs)
+    igv_reader = csv.reader(igv_segs, delimiter='\t')
     
     # test file: titan_segs.txt
-    titan_file = open(titan_segs, 'r')
-    next(titan_file)
-    titan_reader = csv.reader(titan_file, delimiter='\t')
+    next(titan_segs)
+    titan_reader = csv.reader(titan_segs, delimiter='\t')
     
     # test file: custom.txt
     hgnc_file = open(hgnc, 'r')
@@ -85,6 +84,15 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
 
     extracted_file.seek(0)
     return extracted_file 
+
+
+def test_gene_weighted_average():
+    gene_weighted_average(gene_start, gene_end, seg_starts, [1000, 2000], [1, 2, 3])    
+
+
+def gene_weighted_average(gene_start, gene_end, seg_starts, seg_ends, seg_values):
+    """ For a single gene, calculate weighted average from overlapping segments
+    """
 
 
 def calculate_weighted_average(ensembl_dict, column_to_use):
