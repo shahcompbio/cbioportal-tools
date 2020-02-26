@@ -77,7 +77,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'initiator_codon_variant': 'Translation_Start_Site',
     'stop_retained_variant': 'Unknown',
     'protein_protein_contact': 'Unknown',
-    'structural_interaction_variant': '',
+    'structural_interaction_variant': 'Unknown', # my own conclusion
     'rare_amino_acid_variant': 'Missense_Mutation',
     'splice_acceptor_variant': 'Splice_Site',
     'splice_donor_variant': 'Splice_Site',
@@ -169,12 +169,18 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
                     variant_classification = 'Unknown'
 
         record_ann = record.INFO['ANN'][ann_index].split('|')
-        hugo_symbol = record_ann[3]
+        if record_ann[3] == '':
+            hugo_symbol = 'Unknown'
+        else:
+            hugo_symbol = record_ann[3]
         
         if hugo_symbol in hugo_entrez_mapping:
-            entrez_gene_id = hugo_entrez_mapping[hugo_symbol]
+            if hugo_entrez_mapping[hugo_symbol] == '':
+                entrez_gene_id = '0'
+            else:
+                entrez_gene_id = hugo_entrez_mapping[hugo_symbol]
         else:
-            entrez_gene_id = ''
+            entrez_gene_id = '0'
 
         hgvsp_short = record_ann[10]
             

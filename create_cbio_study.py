@@ -84,7 +84,7 @@ def create_study(patient_yaml, path_to_output_study):
                     + '#Patient Identifier\tSample Identifier\tCancer Type description\n' \
                     + '#STRING\tSTRING\tSTRING\n' \
                     + '#1\t1\t1\n' \
-                    + '#PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
+                    + 'PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
     
     case_list_ids = []
     for patient, doc in patient_yaml.items():
@@ -103,14 +103,14 @@ def create_study(patient_yaml, path_to_output_study):
 
     cases_cnaseq = open(path_to_output_study + 'case_lists/cases_cnaseq.txt', 'w+')
     cases_cnaseq.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
-                    + 'stable_id: ' + cancer_study_identifier + '_cna\n' \
+                    + 'stable_id: ' + cancer_study_identifier + '_cnaseq\n' \
                     + 'case_list_name: Sequenced samples profiled for mutations\n' \
                     + 'case_list_description: Sequenced samples profiled for mutations\n' \
                     + 'case_list_ids: ')
 
     cases_sequenced = open(path_to_output_study + 'case_lists/cases_sequenced.txt', 'w+')
     cases_sequenced.write('cancer_study_identifier: ' + cancer_study_identifier + '\n' \
-                    + 'stable_id: ' + cancer_study_identifier + '_cna\n' \
+                    + 'stable_id: ' + cancer_study_identifier + '_sequenced\n' \
                     + 'case_list_name: All sequenced samples\n' \
                     + 'case_list_description: All sequenced samples\n' \
                     + 'case_list_ids: ')
