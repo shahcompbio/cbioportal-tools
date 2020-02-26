@@ -36,7 +36,6 @@ import csv
 import glob
 import logging
 import numpy as np
-import os
 import pandas as pd
 import random
 import vcf
@@ -100,7 +99,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'sequence_feature': 'Unknown' # &exon_loss_variant
     }
 
-    output_filename = os.path.splitext(os.path.splitext(input_file)[0])[0].split('/')[-1] + '.maf'
+    output_filename = input_file.split('.')[0].split('/')[-1] + '.maf'
     output_file = open(output_dir + output_filename, 'w+')
 
     output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
@@ -112,7 +111,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     for hugo, entrez in zip(df['Approved symbol'], df['NCBI Gene ID']):
         hugo_entrez_mapping[hugo] = entrez
     
-    logging.info(f'Running conversion for sample {sample_id}.')
+    print(f'Running conversion for sample {sample_id}.')
 
     vcf_reader = vcf.Reader(filename=input_file)
     for record in vcf_reader:
@@ -180,7 +179,8 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
         hgvsp_short = record_ann[10]
             
         output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\t' + variant_classification +'\t' + hgvsp_short + '\n')
-        logging.info(f'Conversion finished for sample {sample_id}.')
+    
+    print(f'Conversion finished for sample {sample_id}.')
 
 
 @click.command()
