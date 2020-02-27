@@ -8,7 +8,7 @@ from collections import Counter
 
 # merge multiple gistic OR integer gene data text files
 def merge_gistic_gene_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.txt') if not os.path.basename(fn).startswith('merged')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.txt') if not os.path.basename(fn).startswith('data_CNA')]
     files_to_merge = sorted(files_to_merge)
     files_with_issues = []
     dfs_to_merge = []
@@ -25,7 +25,7 @@ def merge_gistic_gene_data(input_dir, output_dir):
     if files_with_issues:
         print('The following list contains gistic gene data files that could not be merged:')
         print(files_with_issues)
-        print('Please fix or remove them and re-run the merge script.')
+        print('Please fix or remove them and rerun the merge script.')
         return
 
     merged_file = dfs_to_merge.pop(0)
@@ -33,35 +33,47 @@ def merge_gistic_gene_data(input_dir, output_dir):
     while dfs_to_merge:
         merged_file = pd.merge(merged_file, dfs_to_merge.pop(), on=['Hugo_Symbol', 'Entrez_Gene_Id'], how='outer')
 
+    merged_file[['Entrez_Gene_Id']] = merged_file[['Entrez_Gene_Id']].replace(np.nan, '')
     merged_file = merged_file.replace(np.nan, 'NA')
-    merged_file = merged_file.replace('nan', '')
-    merged_file.to_csv(output_dir + 'merged.txt', index=None, sep='\t')
+    merged_file.to_csv(output_dir + 'data_CNA.txt', index=None, sep='\t')
 
 
 def merge_log_seg_data(input_dir, output_dir):
-    # skip 1 line in each file after the first
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg') if not os.path.basename(fn).startswith('merged')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg') if not os.path.basename(fn).startswith('data_cna_hg19')]
+    
+    if not files_to_merge:
+        print('No .seg files found. Please add some and rerun.')
+        return
+    
     files_to_merge = sorted(files_to_merge)
     
-    with open(output_dir + 'merged.seg', 'w+') as outfile:
+    with open(output_dir + 'data_cna_hg19.seg', 'w+') as outfile:
         with open(files_to_merge.pop(0)) as infile:
             outfile.write(infile.read())
+        
         for file in files_to_merge:
             with open(file) as infile:
+                # skip 1 line in each file after the first
                 next(infile)
                 outfile.write(infile.read())
 
 
 def merge_maf_data(input_dir, output_dir):
-    # skip 2 lines in each file after the first
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('merged')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf') if not os.path.basename(fn).startswith('data_mutations_extended')]
+    
+    if not files_to_merge:
+        print('No .maf files found. Please add some and rerun.')
+        return
+
     files_to_merge = sorted(files_to_merge)
     
-    with open(output_dir + 'merged.maf', 'w+') as outfile:
+    with open(output_dir + 'data_mutations_extended.maf', 'w+') as outfile:
         with open(files_to_merge.pop(0)) as infile:
             outfile.write(infile.read())
+        
         for file in files_to_merge:
             with open(file) as infile:
+                # skip 2 lines in each file after the first
                 for line in infile.readlines()[2:]:
                     outfile.write(line)
 
