@@ -134,6 +134,10 @@ def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
     '''
     original code by Diljot Grewal
 
+    museq_paired and strekla_snv, 
+    take position intersection plus probability filter of 0.85
+    (keep positions >= 0.85 that are in both)
+
     modifications: take museq and strelka directly as input, output
     to temp_dir, take sample id as input and append to output
     filtered filename
