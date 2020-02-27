@@ -102,7 +102,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     output_filename = input_file.split('.')[0].split('/')[-1] + '.maf'
     output_file = open(output_dir + output_filename, 'w+')
 
-    output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tTumor_Sample_Barcode\tVariant_Classification\tHGVSp_Short\n'
+    output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tVariant_Classification\tReference_Allele\tTumor_Seq_Allele1\tTumor_Seq_Allele2\tTumor_Sample_Barcode\tHGVSp_Short\n'
     output_file.write(output_header)
 
     hugo_entrez_mapping = {}
@@ -116,7 +116,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     vcf_reader = vcf.Reader(filename=input_file)
     for record in vcf_reader:
         ref = record.REF
-        alt = record.ALT # list of length 1, take length of first item
+        alt = ''.join(map(str, record.ALT))
         
         record_annotations = [ann.split('|')[1].split('&')[0] for ann in record.INFO['ANN']]
         if 'missense_variant' in record_annotations:
@@ -153,11 +153,11 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
                     variant_classification = 'Unknown'
 
             elif annotation == 'frameshift_variant':
-                if len(ref) != len(alt[0]):
+                if len(ref) != len(alt):
                     logging.warning(f'{record} has REF and ALT with unequal lengths!')
-                    if len(ref) > len(alt[0]):
+                    if len(ref) > len(alt):
                         variant_classification = 'Frame_Shift_Del'
-                    elif len(ref) < len(alt[0]):
+                    elif len(ref) < len(alt):
                         variant_classification = 'Frame_Shift_Ins'
                 else:
                     variant_classification = 'Unknown'
@@ -184,7 +184,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
 
         hgvsp_short = record_ann[10]
             
-        output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + sample_id + '\t' + variant_classification +'\t' + hgvsp_short + '\n')
+        output_file.write(hugo_symbol + '\t' + entrez_gene_id + '\t' + variant_classification + '\t' + ref + '\t' + ref + '\t' + alt + '\t' + sample_id +'\t' + hgvsp_short + '\n')
     
     print(f'Conversion finished for sample {sample_id}.')
 
