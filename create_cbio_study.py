@@ -193,6 +193,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         temp_dir = temp_dir + '/'
 
     Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
+    Path(temp_dir).mkdir(parents=True, exist_ok=True)
 
     with open(input_yaml) as file:
         yaml_file = yaml.full_load(file)
@@ -205,6 +206,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             for sample, doc in doc.items():
                 museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
                 convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
+                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
                 
                 with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
                     generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
