@@ -20,9 +20,10 @@ from convert_vcf_to_maf import convert as convert_vcf_to_maf
 from generate_outputs import extract, transform, load
 from merge_outputs import merge_all_data as merge_outputs
 from pathlib import Path
+import hmmcopy
 
 
-def create_study(patient_yaml, path_to_output_study):
+def create_study(study_info, path_to_output_study):
     '''
     prerequisites:
     data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
@@ -31,11 +32,11 @@ def create_study(patient_yaml, path_to_output_study):
     Please see cbioportal/docs/File-Formats.md on GitHub for examples
     '''
     
-    type_of_cancer = click.prompt('Please enter type of cancer', default='ovary')
-    cancer_study_identifier = click.prompt('Please enter a cancer study identifier', default='twins_shahlab_2020')
-    name = click.prompt('Please enter a name', default='TWINS (Shah Lab, 2020)')
-    description = click.prompt('Please enter a description', default='Mutation data in TWINS cases')
-    short_name = click.prompt('Please enter a short name', default='TWINS (Shahlab)')
+    type_of_cancer = study_info['type_of_cancer']
+    cancer_study_identifier = study_info['cancer_study_identifier']
+    name = study_info['name']
+    description = study_info['description']
+    short_name = study_info['short_name']
     
     meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
     meta_study.write('type_of_cancer: ' + type_of_cancer + '\n' \
@@ -87,7 +88,7 @@ def create_study(patient_yaml, path_to_output_study):
                     + 'PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
     
     case_list_ids = []
-    for patient, doc in patient_yaml.items():
+    for patient, doc in study_info['patients'].items():
         for sample, _ in doc.items():
             data_clinical_sample.write(patient + '\t' + sample + '\t' + type_of_cancer.upper() + '\n')
             case_list_ids.append(sample)
@@ -151,7 +152,7 @@ def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
         for line in strelka_data:
             if line.startswith('#'):
                 continue
-            
+
             line = line.strip().split()
             
             chrom = line[0]
@@ -200,17 +201,25 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         
-        create_study(yaml_file['patients'], path_to_output_study)
+        create_study(yaml_file, path_to_output_study)
 
         for _, doc in yaml_file['patients'].items():
             for sample, doc in doc.items():
-                museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
-                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
-                
-                with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
-                    generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
-        
+                if doc['datatype'] == 'WGS':
+                    museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                    convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
+                    convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
+                    
+                    with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
+                        generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
+
+                elif doc['datatype'] == 'SCWGS':
+                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
+                    
+
+                else:
+                    raise ValueError(f'unrecognized data type {doc["datatype"]}')
+
     merge_outputs(temp_dir, path_to_output_study)    
 
 
