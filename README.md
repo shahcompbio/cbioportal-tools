@@ -27,7 +27,7 @@ For testing please run `python test_merge.py`
 ### containerization
 
 We've decided to use [vcf2maf](https://github.com/mskcc/vcf2maf) and [ensembl-vep](https://github.com/Ensembl/ensembl-vep) for our .vcf to .maf conversion needs.
-Conversion has been tested with Docker containers:
+Conversion has been tested with Docker:
 
 ```
 docker run -it --rm \
