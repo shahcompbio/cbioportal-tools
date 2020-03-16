@@ -17,6 +17,7 @@ import gzip
 import yaml
 
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
+from filter_vcfs import filter_vcfs
 from generate_outputs import extract, transform, load
 from merge_outputs import merge_all_data as merge_outputs
 from pathlib import Path
@@ -128,58 +129,6 @@ def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, outp
     extracted_file = extract(gtf_file, hgnc_file, titan_igv, titan_segs)
     gene_dict, seg_dict = transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
     load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
-
-
-def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
-    '''
-    original code by Diljot Grewal
-
-    museq_paired and strekla_snv,
-    take position intersection plus probability filter of 0.85
-    (keep positions >= 0.85 that are in both)
-
-    modifications: take museq and strelka directly as input, output
-    to temp_dir, take sample id as input and append to output
-    filtered filename
-    '''
-
-    museq_filtered = work_dir + '{}_museq_filtered.vcf.gz'.format(sample_id)
-
-    strelka_ref = set()
-
-    with gzip.open(strelka_vcf, 'rt') as strelka_data:
-        for line in strelka_data:
-            if line.startswith('#'):
-                continue
-            
-            line = line.strip().split()
-            
-            chrom = line[0]
-            pos = line[1]
-            
-            strelka_ref.add((chrom, pos))
-
-    with gzip.open(museq_vcf, 'rt') as museq_data, gzip.open(museq_filtered, 'wt') as museqout:
-        for line in museq_data:
-            if line.startswith('#'):
-                museqout.write(line)
-                continue
-            
-            line = line.strip().split()
-            chrom = line[0]
-            pos = line[1]
-            
-            if ((chrom, pos))  not in strelka_ref:
-                continue
-            
-            pr = line[7].split(';')[0].split('=')[1]
-            if float(pr) < 0.85:
-                continue
-            
-            outstr = '\t'.join(line)+'\n'
-            museqout.write(outstr)
-
-    return museq_filtered
 
 
 @click.command()
