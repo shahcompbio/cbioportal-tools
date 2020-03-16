@@ -13,14 +13,14 @@ afterwards:
 '''
 
 import click
+import hmmcopy
 import gzip
 import yaml
 
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
 from generate_outputs import extract, transform, load
-from merge_outputs import merge_all_data as merge_outputs
+from merge_outputs import merge_all_data as merge_outputs, merge_maf_data
 from pathlib import Path
-import hmmcopy
 
 
 def create_study(study_info, path_to_output_study):
@@ -205,22 +205,26 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         for _, doc in yaml_file['patients'].items():
             for sample, doc in doc.items():
+                museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                # Run in container:
+                # convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
+                # convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
+
                 if doc['datatype'] == 'WGS':
-                    museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                    convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
-                    convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
-                    
                     with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
                         generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
 
                 elif doc['datatype'] == 'SCWGS':
-                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
-                    
+                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])     
 
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')
 
-    merge_outputs(temp_dir, path_to_output_study)    
+    if doc['datatype'] == 'WGS':
+        merge_outputs(temp_dir, path_to_output_study)
+    
+    elif doc['datatype'] == 'SCWGS':
+        merge_maf_data(temp_dir, path_to_output_study)
 
 
 if __name__ == '__main__':

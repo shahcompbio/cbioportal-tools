@@ -99,7 +99,7 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
     'sequence_feature': 'Unknown' # &exon_loss_variant
     }
 
-    output_filename = '{}_strelka_indel_annotated.maf'.format(sample_id)
+    output_filename = input_file.split('.')[0].split('/')[-1] + '.maf'
     output_file = open(output_dir + output_filename, 'w+')
 
     output_header='#version 0.1 (cBioPortal minimal MAF format)\nHugo_Symbol\tEntrez_Gene_Id\tVariant_Classification\tReference_Allele\tTumor_Seq_Allele1\tTumor_Seq_Allele2\tTumor_Sample_Barcode\tHGVSp_Short\n'
