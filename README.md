@@ -11,14 +11,14 @@ Code that takes four files as input:
 
 and returns four text files:
 
-1. gistic format segment data
+1. log (median log ratio) segment data
 2. gistic format gene data
 3. integer segment data
 4. integer gene data
 
 ### merge_outputs.py
 
-Code that takes a directory of gistic format gene data OR integer gene data text files and outputs a single text file with their contents merged.
+Code that takes a directory of gistic format gene data OR integer gene data AND/OR log segment data AND/OR .maf text files and outputs a single text file with their contents merged.
 
 ### containerization
 
