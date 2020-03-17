@@ -215,7 +215,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
 
                 elif doc['datatype'] == 'SCWGS':
-                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])     
+                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
 
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')

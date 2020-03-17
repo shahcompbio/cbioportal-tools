@@ -53,11 +53,59 @@ def aggregate_adjacent(cnv, value_cols=(), stable_cols=(), length_normalized_col
     return aggregated
 
 
+def calculate_gene_copy(cnv, genes):
+    """ Calculate the copy number segments overlapping each gene
+
+    Args:
+        cnv (pandas.DataFrame): copy number table
+        genes (pandas.DataFrame): gene table
+
+    Returns:
+        pandas.DataFrame: segment copy number for each gene
+
+    The input copy number table is assumed to have columns: 
+        'chr', 'start', 'end', 'width', 'copy', 'reads', 'state'
+
+    The input genes table is assumed to have columns:
+        'chr', 'gene_start', 'gene_end', 'gene_id'
+
+    The output segment copy number table should have columns:
+        'gene_id', 'chr', 'gene_start', 'gene_end', 'start', 'end',
+        'width', 'copy', 'reads', 'state'
+    where each entry in the output table represents an overlap between
+    a gene and a segment.
+
+    """
+
+    data = []
+
+    for chr in cnv['chr'].unique():
+        chr_cnv = cnv[cnv['chr'] == chr]
+        chr_genes = genes[genes['chr'] == chr]
+
+        # Iterate through segments, calculate overlapping genes
+        for idx, row in chr_cnv.iterrows():
+            
+            # Subset overlapping genes
+            overlapping_genes = chr_genes[~((chr_genes['gene_end'] < row['start']) | (chr_genes['gene_start'] > row['end'])]
+
+            # Add cnv columns
+            overlapping_genes 
+
+            data.append(overlapping_genes)
+
+    data = pd.concat(data, ignore_index=True)
+
+    return data
+
+
 def read_copy_data(bins_filename, filter_normal=False):
+    """ Read hmmcopy data, filter normal cells and aggregate into segments
+    """
     data = pd.read_csv(bins_filename)
 
     # Filter normal cells that are approximately diploid
-    if False:#filter_normal:
+    if filter_normal:
         cell_stats = (
             data[data['chr'].isin(autosomes)]
             .groupby('cell_id')['state']
@@ -88,3 +136,5 @@ def read_copy_data(bins_filename, filter_normal=False):
     )
 
     return data
+
+
