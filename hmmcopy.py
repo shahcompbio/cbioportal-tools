@@ -99,6 +99,19 @@ def calculate_gene_copy(cnv, genes):
     return data
 
 
+def test_calculate_gene_copy():
+    # Create some cnv data
+    cnv = pd.DataFrame({})
+
+    # Create some gene data
+    gene = pd.DataFrame({})
+
+    # Create known overlap
+    overlapping = pd.DataFrame({})
+
+    assert overlapping == calculate_gene_copy(cnv, genes)
+
+
 def read_copy_data(bins_filename, filter_normal=False):
     """ Read hmmcopy data, filter normal cells and aggregate into segments
     """
