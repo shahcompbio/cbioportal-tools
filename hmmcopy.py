@@ -87,10 +87,10 @@ def calculate_gene_copy(cnv, genes):
         for idx, row in chr_cnv.iterrows():
             
             # Subset overlapping genes
-            overlapping_genes = chr_genes[~((chr_genes['gene_end'] < row['start']) | (chr_genes['gene_start'] > row['end'])]
+            overlapping_genes = chr_genes[~((chr_genes['gene_end'] < row['start']) | (chr_genes['gene_start'] > row['end']))]
 
             # Add cnv columns
-            overlapping_genes 
+            overlapping_genes
 
             data.append(overlapping_genes)
 
@@ -149,5 +149,3 @@ def read_copy_data(bins_filename, filter_normal=False):
     )
 
     return data
-
-
