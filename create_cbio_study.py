@@ -217,6 +217,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 elif doc['datatype'] == 'SCWGS':
                     cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
                     genes = hmmcopy.read_gene_data(gtf_file)
+                    
+                    hmmcopy.calculate_gene_copy(cnv, genes)
 
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')
