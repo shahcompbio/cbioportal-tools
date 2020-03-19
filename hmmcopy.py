@@ -89,8 +89,8 @@ def calculate_gene_copy(cnv, genes):
             # Subset overlapping genes
             overlapping_genes = chr_genes[~((chr_genes['gene_end'] < row['start']) | (chr_genes['gene_start'] > row['end']))]
 
-            # TODO: add cnv columns
-            overlapping_genes
+            if not overlapping_genes.empty:
+                overlapping_genes = overlapping_genes.assign(start = row['start'], end = row['end'], width = row['width'], copy = row['copy'], reads = row['reads'], state = row['state'])
 
             data.append(overlapping_genes)
 
