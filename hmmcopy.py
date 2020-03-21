@@ -85,7 +85,7 @@ def calculate_gene_copy(cnv, genes):
 
         # Iterate through segments, calculate overlapping genes
         for idx, row in chr_cnv.iterrows():
-            
+
             # Subset overlapping genes
             overlapping_genes = chr_genes[~((chr_genes['gene_end'] < row['start']) | (chr_genes['gene_start'] > row['end']))]
 
@@ -99,18 +99,17 @@ def calculate_gene_copy(cnv, genes):
     return data
 
 
-# TODO: finish test skeleton
 def test_calculate_gene_copy():
     # Create some cnv data
-    cnv = pd.DataFrame({})
+    cnv = pd.DataFrame([{'chr': 'Y', 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0}])
 
     # Create some gene data
-    genes = pd.DataFrame({})
+    genes = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825}])
 
     # Create known overlap
-    overlapping = pd.DataFrame({})
+    overlapping = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825, 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0, }])
 
-    assert overlapping == calculate_gene_copy(cnv, genes)
+    assert overlapping.equals(calculate_gene_copy(cnv, genes))
 
 
 def read_copy_data(bins_filename, filter_normal=False):
@@ -162,7 +161,7 @@ def read_gene_data(gtf):
 
 # Testing
 def main():
-    read_gene_data('Homo_sapiens.GRCh37.73.gtf')
+    test_calculate_gene_copy()
 
 
 if __name__ == '__main__':
