@@ -15,8 +15,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     
     # test file: igv_segs.txt
     igv_file = open(igv_segs, 'r')
-    next(igv_segs)
-    igv_reader = csv.reader(igv_segs, delimiter='\t')
+    next(igv_file)
+    igv_reader = csv.reader(igv_file, delimiter='\t')
     
     # test file: titan_segs.txt
     next(titan_segs)
