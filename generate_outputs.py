@@ -14,7 +14,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
-    # igv_file = open(igv_segs, 'r')
+    igv_file = open(igv_segs, 'r')
     next(igv_segs)
     igv_reader = csv.reader(igv_segs, delimiter='\t')
     
