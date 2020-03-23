@@ -211,8 +211,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 # convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
 
                 if doc['datatype'] == 'WGS':
-                    with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
-                        generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
+                    with gzip.open(doc['titan_segs'], 'rt') as titan_segs:
+                        generate_outputs(gtf_file, hgnc_file, doc['titan_igv'], titan_segs, sample, temp_dir)        
 
                 elif doc['datatype'] == 'SCWGS':
                     cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])

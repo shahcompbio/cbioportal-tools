@@ -79,6 +79,7 @@ def calculate_gene_copy(cnv, genes):
 
     data = []
 
+    # TODO: check why only one segment is displayed
     for chr in cnv['chr'].unique():
         chr_cnv = cnv[cnv['chr'] == chr]
         chr_genes = genes[genes['chr'] == chr]
