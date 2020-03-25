@@ -126,12 +126,14 @@ def read_copy_data(bins_filename, filter_normal=False):
             .agg(['mean', 'std'])
             .reset_index())
 
-        normal_cells = (
-            cell_stats
-            .query('1.95 < mean < 2.05')
-            .query('std < 0.01'))
+        cell_stats['is_normal'] = (
+            (cell_stats['mean'] > 1.95) &
+            (cell_stats['mean'] < 2.05) &
+            (cell_stats['std'] < 0.01))
 
-        data = data.merge(normal_cells[['cell_id']])
+        data = data.merge(cell_stats[['cell_id', 'is_normal']], how='left')
+
+        data = data[~data['is_normal']]
 
     # Aggregate cell copy number
     data = (
