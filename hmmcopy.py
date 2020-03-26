@@ -23,7 +23,7 @@ def aggregate_adjacent(cnv, value_cols=(), stable_cols=(), length_normalized_col
     """
 
     # Group segments with same state
-    cnv = cnv.sort_values(['chr'] + value_cols)
+    cnv = cnv.sort_values(['chr', 'start'])
     cnv['chromosome_index'] = np.searchsorted(np.unique(cnv['chr']), cnv['chr'])
     cnv['diff'] = cnv[['chromosome_index'] + value_cols].diff().abs().sum(axis=1)
     cnv['is_diff'] = (cnv['diff'] != 0)
@@ -141,6 +141,8 @@ def read_copy_data(bins_filename, filter_normal=False):
         .groupby(['chr', 'start', 'end', 'width'])
         .agg({'state': 'median', 'copy': np.nanmean, 'reads': 'sum'})
         .reset_index())
+
+    assert not data.duplicated(['chr', 'start', 'end']).any()
 
     # Aggregate cell copy number
     data = aggregate_adjacent(
