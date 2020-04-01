@@ -203,12 +203,15 @@ def main(input_yaml, path_to_output_study, temp_dir):
         
         create_study(yaml_file, path_to_output_study)
 
-        for _, doc in yaml_file['patients'].items():
+        for patient_id, doc in yaml_file['patients'].items():
             for sample, doc in doc.items():
                 museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                # Run in container:
-                # convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
-                # convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
+
+                dataset_id = f'{patient_id}-{sample}-snvs'
+                convert_vcf_to_maf(museq_filtered, sample, temp_dir, dataset_id)
+
+                dataset_id = f'{patient_id}-{sample}-indels'
+                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, temp_dir, dataset_id)
 
                 if doc['datatype'] == 'WGS':
                     with gzip.open(doc['titan_segs'], 'rt') as titan_segs:

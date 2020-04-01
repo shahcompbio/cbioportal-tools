@@ -39,9 +39,11 @@ import numpy as np
 import pandas as pd
 import random
 import vcf
+import os
+import subprocess
 
 
-def convert(input_file, sample_id, hgnc_file, output_dir):
+def convert(input_file, sample_id, output_dir, dataset_id):
     '''
     required columns:
         'Hugo_Symbol' (Gene_Name)
@@ -50,7 +52,32 @@ def convert(input_file, sample_id, hgnc_file, output_dir):
         'Variant_Classification' (from Annotation and ann_mapping dict)
         'HGVSp_Short' (HGVS.p)
     '''
-    
+
+    assert input_file.endswith('.gz')
+
+    vcf_filename = os.path.join(output_dir, f'{dataset_id}.vcf')
+    maf_filename = os.path.join(output_dir, f'{dataset_id}.maf')
+
+    with open(vcf_filename, 'w') as f:
+        subprocess.check_call(['gunzip', '-c', input_file], stdout=f)
+
+    cmd = (f'singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf \
+docker://quay.io/biocontainers/vcf2maf:1.6.17--2 \
+vcf2maf.pl \
+--input-vcf {vcf_filename} \
+--output-maf {maf_filename} \
+--vep-path /usr/local/bin \
+--ref-fasta /vcf2maf/cache/homo_sapiens/99_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz \
+--filter-vcf /vcf2maf/cache/ExAC_nonTCGA.r0.3.1.sites.vep.vcf.gz \
+--vep-data /vcf2maf/cache/ \
+--tumor-id {sample_id}')
+
+    print(cmd)
+
+    subprocess.check_call(cmd.split())
+
+    return maf_filename
+
     ann_mapping = {
     'chromosome': 'Unknown',
     'duplication': 'Unknown',
