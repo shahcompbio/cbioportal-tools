@@ -31,11 +31,27 @@ docker run -it --rm \
 -v /home/spenca/vcf2maf_output:/output \
 -v /home/spenca/cache:/cache \
 quay.io/biocontainers/vcf2maf:1.6.17--2 \
-vcf2maf.pl --input-vcf input/SPECTRUM-WGS-OV-007_museq_filtered.vcf --output-maf /output/test.maf --vep-path /usr/local/bin --ref-fasta /cache/homo_sapiens/99_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz --filter-vcf /cache/ExAC_nonTCGA.r0.3.1.sites.vep.vcf.gz --vep-data /cache/ --tumor-id SPECTRUM-WGS-OV-007
+vcf2maf.pl \
+--input-vcf /vcf2maf/input/SPECTRUM-WGS-OV-007_museq_filtered.vcf \
+--output-maf /vcf2maf/output/test.maf \
+--vep-path /usr/local/bin \
+--ref-fasta /vcf2maf/cache/homo_sapiens/99_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz \
+--filter-vcf /vcf2maf/cache/ExAC_nonTCGA.r0.3.1.sites.vep.vcf.gz \
+--vep-data /vcf2maf/cache/ \
+--tumor-id SPECTRUM-WGS-OV-007
 ```
 
 as well as Singularity:
 
 ```
-singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf docker://quay.io/biocontainers/vcf2maf:1.6.17--2 vcf2maf.pl --input-vcf /vcf2maf/input/SPECTRUM-WGS-OV-007_museq_filtered.vcf --output-maf /vcf2maf/output/test.maf --vep-path /usr/local/bin --ref-fasta /vcf2maf/cache/homo_sapiens/99_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz --filter-vcf /vcf2maf/cache/ExAC_nonTCGA.r0.3.1.sites.vep.vcf.gz --vep-data /vcf2maf/cache/ --tumor-id SPECTRUM-WGS-OV-007
+singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf \
+docker://quay.io/biocontainers/vcf2maf:1.6.17--2 \
+vcf2maf.pl \
+--input-vcf /vcf2maf/input/SPECTRUM-WGS-OV-007_museq_filtered.vcf \
+--output-maf /vcf2maf/output/test.maf \
+--vep-path /usr/local/bin \
+--ref-fasta /vcf2maf/cache/homo_sapiens/99_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz \
+--filter-vcf /vcf2maf/cache/ExAC_nonTCGA.r0.3.1.sites.vep.vcf.gz \
+--vep-data /vcf2maf/cache/ \
+--tumor-id SPECTRUM-WGS-OV-007
 ```
