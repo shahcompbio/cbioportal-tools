@@ -1,0 +1,79 @@
+# absolute paths please!
+id_mapping: example/custom.txt
+gtf: example/Homo_sapiens.GRCh37.73.gtf
+type_of_cancer: 'ovary'
+cancer_study_identifier: 'spectrum'
+name: 'SPECTRUM (Shah Lab, 2020)'
+description: 'Mutation data in SPECTRUM cases'
+short_name: 'SPECTRUM (Shahlab)'
+patients:
+  SPECTRUM_004:
+  	SA1202LA_A96121B:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3281/results/variant_calling/sample_SA1202LA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3281/results/variant_calling/sample_SA1202LA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3281/results/hmmcopy/A96121B_reads.csv.gz
+  SPECTRUM_004:
+  	SA1202LA_A96253B:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3292/results/variant_calling/sample_SA1202LA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3292/results/variant_calling/sample_SA1202LA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3292/results/hmmcopy/A96253B_reads.csv.gz
+  SPECTRUM_004:
+  	SA1202RA_A96185B:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3356/results/variant_calling/sample_SA1202RA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3356/results/variant_calling/sample_SA1202RA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3356/results/hmmcopy/A96185B_reads.csv.gz
+  SPECTRUM_004:
+  	SA1202RA_A96167A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-2654/results/variant_calling/sample_SA1202RA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-2654/results/variant_calling/sample_SA1202RA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-2654/results/hmmcopy/A96167A_reads.csv.gz
+  SPECTRUM_022:
+  	SA1255LA_A108851A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3463/results/variant_calling/sample_SA1255LA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3463/results/variant_calling/sample_SA1255LA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3463/results/hmmcopy/A108851A_reads.csv.gz
+  SPECTRUM_022:
+  	SA1255LA_A108833A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3671/results/variant_calling/sample_SA1255LA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3671/results/variant_calling/sample_SA1255LA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3671/results/hmmcopy/A108833A_reads.csv.gz
+  SPECTRUM_022:
+  	SA1255RA_A98179A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3338/results/variant_calling/sample_SA1255RA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3338/results/variant_calling/sample_SA1255RA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3338/results/hmmcopy/A98179A_reads.csv.gz
+  SPECTRUM_045:
+  	SA1256IO_A108832A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3543/results/variant_calling/sample_SA1256IO/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3543/results/variant_calling/sample_SA1256IO/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3543/results/hmmcopy/A108832A_reads.csv.gz
+  SPECTRUM_045:
+  	SA1256PP_A108836A:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3672/results/variant_calling/sample_SA1256PP/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3672/results/variant_calling/sample_SA1256PP/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3672/results/hmmcopy/A108836A_reads.csv.gz
+  SPECTRUM_045:
+  	SA1256RA_A98245B:
+      datatype: SCWGS
+      filter_normal: true
+    	museq_vcf: /work/shah/tantalus/SC-3245/results/variant_calling/sample_SA1256RA/museq.vcf.gz
+    	strelka_vcf: /work/shah/tantalus/SC-3245/results/variant_calling/sample_SA1256RA/strelka_snv.vcf.gz
+      hmmcopy_csv: /work/shah/tantalus/SC-3245/results/hmmcopy/A98245B_reads.csv.gz
