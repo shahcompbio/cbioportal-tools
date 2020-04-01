@@ -157,8 +157,16 @@ def read_copy_data(bins_filename, filter_normal=False):
 
 
 def read_gene_data(gtf):
-    data = pd.read_csv(gtf, delimiter='\t', names=['chr', 'gene_start', 'gene_end', 'gene_id'], usecols=[0,3,4,8])
+    data = pd.read_csv(
+        gtf,
+        delimiter='\t',
+        names=['chr', 'gene_start', 'gene_end', 'gene_id'],
+        usecols=[0,3,4,8],
+        converters={'chr': str},
+    )
+
     data['gene_id'] = data['gene_id'].str.extract('(ENSG\d+)')
+
     data = data.groupby(['chr', 'gene_id']).agg({'gene_start':'min', 'gene_end':'max'}).reset_index()
 
     return data
