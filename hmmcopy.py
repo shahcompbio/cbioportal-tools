@@ -193,7 +193,7 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data['titan_state'] = 0
     data = data[['chr', 'seg_start', 'seg_end', 'state', 'titan_state', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
 
-    data.to_csv(temp_dir + 'hmmcopy_extract.txt', index=None, sep='\t')
+    data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
 
 # Testing

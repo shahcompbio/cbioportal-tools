@@ -224,14 +224,14 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
                     hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
 
+                    extracted_file = open(temp_dir + 'hmmcopy_extract', 'r')
+                    gene_dict, seg_dict = transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
+                    load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
+
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')
 
-    if doc['datatype'] == 'WGS':
-        merge_outputs(temp_dir, path_to_output_study)
-    
-    elif doc['datatype'] == 'SCWGS':
-        merge_maf_data(temp_dir, path_to_output_study)
+    merge_outputs(temp_dir, path_to_output_study)
 
 
 if __name__ == '__main__':
