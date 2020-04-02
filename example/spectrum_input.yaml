@@ -15,7 +15,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3281/results/variant_calling/sample_SA1202LA/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3281/results/variant_calling/sample_SA1202LA/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3281/results/hmmcopy/A96121B_reads.csv.gz
-  SPECTRUM_004:
     SA1202LA_A96253B:
       datatype: SCWGS
       filter_normal: true
@@ -23,7 +22,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3292/results/variant_calling/sample_SA1202LA/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3292/results/variant_calling/sample_SA1202LA/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3292/results/hmmcopy/A96253B_reads.csv.gz
-  SPECTRUM_004:
     SA1202RA_A96185B:
       datatype: SCWGS
       filter_normal: true
@@ -31,7 +29,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3356/results/variant_calling/sample_SA1202RA/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3356/results/variant_calling/sample_SA1202RA/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3356/results/hmmcopy/A96185B_reads.csv.gz
-  SPECTRUM_004:
     SA1202RA_A96167A:
       datatype: SCWGS
       filter_normal: true
@@ -47,7 +44,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3463/results/variant_calling/sample_SA1255LA/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3463/results/variant_calling/sample_SA1255LA/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3463/results/hmmcopy/A108851A_reads.csv.gz
-  SPECTRUM_022:
     SA1255LA_A108833A:
       datatype: SCWGS
       filter_normal: true
@@ -55,7 +51,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3671/results/variant_calling/sample_SA1255LA/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3671/results/variant_calling/sample_SA1255LA/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3671/results/hmmcopy/A108833A_reads.csv.gz
-  SPECTRUM_022:
     SA1255RA_A98179A:
       datatype: SCWGS
       filter_normal: true
@@ -71,7 +66,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3543/results/variant_calling/sample_SA1256IO/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3543/results/variant_calling/sample_SA1256IO/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3543/results/hmmcopy/A108832A_reads.csv.gz
-  SPECTRUM_045:
     SA1256PP_A108836A:
       datatype: SCWGS
       filter_normal: true
@@ -79,7 +73,6 @@ patients:
       strelka_vcf: /work/shah/tantalus/SC-3672/results/variant_calling/sample_SA1256PP/strelka_snv.vcf.gz
       strelka_indel_vcf: /work/shah/tantalus/SC-3672/results/variant_calling/sample_SA1256PP/strelka_indel.vcf.gz
       hmmcopy_csv: /work/shah/tantalus/SC-3672/results/hmmcopy/A108836A_reads.csv.gz
-  SPECTRUM_045:
     SA1256RA_A98245B:
       datatype: SCWGS
       filter_normal: true
