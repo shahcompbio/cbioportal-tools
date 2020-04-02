@@ -174,8 +174,10 @@ def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missi
                 # gene end point
                 if line[7] not in ensembl_dict:
                     ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
-                
-                ensembl_dict[line[7]][0].append(int(line[1]))
+                try:
+                    ensembl_dict[line[7]][0].append(int(line[1]))
+                except:
+                    raise Exception(line)
                 ensembl_dict[line[7]][1].append(int(line[2]))
                 ensembl_dict[line[7]][2].append(int(line[3]))
                 ensembl_dict[line[7]][3].append(int(line[4]))
