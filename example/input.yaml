@@ -13,4 +13,5 @@ patients:
       filter_normal: true
       strelka_vcf: example/strelka_snv.vcf.gz
       museq_vcf: example/museq.vcf.gz
+      strelka_indel_vcf: example/strelka_indel.vcf.gz
       hmmcopy_csv: example/A96121B_reads.csv.gz

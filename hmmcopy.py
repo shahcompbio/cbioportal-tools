@@ -1,3 +1,4 @@
+import csv
 import pandas as pd
 import numpy as np
 
@@ -170,6 +171,29 @@ def read_gene_data(gtf):
     data = data.groupby(['chr', 'gene_id']).agg({'gene_start':'min', 'gene_end':'max'}).reset_index()
 
     return data
+
+
+def convert_to_transform_format(data, hgnc, temp_dir):
+    """Hacky way to get data generated
+    """
+    hgnc_file = open(hgnc, 'r')
+    next(hgnc_file)
+    hgnc_reader = csv.reader(hgnc_file, delimiter='\t')
+    hgnc_dict = {}
+    for hgnc_line in hgnc_reader:
+        if len(hgnc_line) == 3:
+            hgnc_dict[hgnc_line[2]] = (hgnc_line[0], hgnc_line[1])
+
+    data['hugo_symbol'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[0])
+    data['entrez_id'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[1])
+    data['median_logr'] = np.log2(data['copy'] / 2)
+    data['num.mark'] = (data['width'] / 500000).astype(int)
+
+    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end'})
+    data['titan_state'] = 0
+    data = data[['chr', 'seg_start', 'seg_end', 'state', 'titan_state', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
+
+    data.to_csv(temp_dir + 'hmmcopy_extract.txt', index=None, sep='\t')
 
 
 # Testing

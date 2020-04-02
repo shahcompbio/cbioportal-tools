@@ -222,6 +222,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     genes = hmmcopy.read_gene_data(gtf_file)
                     
                     overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
+                    hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
 
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')
