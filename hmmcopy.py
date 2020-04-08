@@ -77,7 +77,6 @@ def calculate_gene_copy(cnv, genes):
     a gene and a segment.
 
     """
-
     data = []
 
     # TODO: check why only one segment is displayed
@@ -190,8 +189,9 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data['num.mark'] = (data['width'] / 500000).astype(int)
 
     data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end'})
-    data['titan_state'] = 0
-    data = data[['chr', 'seg_start', 'seg_end', 'state', 'titan_state', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
+    data['placeholder'] = 0
+    data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
+    data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
 
     data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
