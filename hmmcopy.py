@@ -192,7 +192,8 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data['placeholder'] = 0
     data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
     data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
-
+    data.loc[data['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
+    print(data.loc[data['median_logr'] == np.NINF])
     data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
 
