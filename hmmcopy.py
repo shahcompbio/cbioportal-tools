@@ -193,7 +193,32 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
     data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
     data.loc[data['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
-    print(data.loc[data['median_logr'] == np.NINF])
+
+    data.loc[(data['chr'] == '1') & (data['seg_end'] == 249500000), 'seg_end'] = 249250621
+    data.loc[(data['chr'] == '2') & (data['seg_end'] == 243500000), 'seg_end'] = 243199373
+    data.loc[(data['chr'] == '3') & (data['seg_end'] == 198500000), 'seg_end'] = 198022430
+    data.loc[(data['chr'] == '4') & (data['seg_end'] == 191500000), 'seg_end'] = 191154276
+    data.loc[(data['chr'] == '5') & (data['seg_end'] == 181000000), 'seg_end'] = 180915260
+    data.loc[(data['chr'] == '6') & (data['seg_end'] == 171500000), 'seg_end'] = 171115067
+    data.loc[(data['chr'] == '7') & (data['seg_end'] == 159500000), 'seg_end'] = 159138663
+    data.loc[(data['chr'] == '8') & (data['seg_end'] == 146500000), 'seg_end'] = 146364022
+    data.loc[(data['chr'] == '9') & (data['seg_end'] == 141500000), 'seg_end'] = 141213431
+    data.loc[(data['chr'] == '10') & (data['seg_end'] == 136000000), 'seg_end'] = 135534747
+    data.loc[(data['chr'] == '11') & (data['seg_end'] == 135500000), 'seg_end'] = 135006516
+    data.loc[(data['chr'] == '12') & (data['seg_end'] == 134000000), 'seg_end'] = 133851895
+    data.loc[(data['chr'] == '13') & (data['seg_end'] == 115500000), 'seg_end'] = 115169878
+    data.loc[(data['chr'] == '14') & (data['seg_end'] == 107500000), 'seg_end'] = 107349540
+    data.loc[(data['chr'] == '15') & (data['seg_end'] == 103000000), 'seg_end'] = 102531392
+    data.loc[(data['chr'] == '16') & (data['seg_end'] == 90500000), 'seg_end'] = 90354753
+    data.loc[(data['chr'] == '17') & (data['seg_end'] == 81500000), 'seg_end'] = 81195210
+    data.loc[(data['chr'] == '18') & (data['seg_end'] == 78500000), 'seg_end'] = 78077248
+    data.loc[(data['chr'] == '19') & (data['seg_end'] == 59500000), 'seg_end'] = 59128983
+    data.loc[(data['chr'] == '20') & (data['seg_end'] == 63500000), 'seg_end'] = 63025520
+    data.loc[(data['chr'] == '21') & (data['seg_end'] == 48500000), 'seg_end'] = 48129895
+    data.loc[(data['chr'] == '22') & (data['seg_end'] == 51500000), 'seg_end'] = 51304566
+    data.loc[(data['chr'] == 'X') & (data['seg_end'] == 155500000), 'seg_end'] = 155270560
+    data.loc[(data['chr'] == 'Y') & (data['seg_end'] == 59500000), 'seg_end'] = 59373566
+
     data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
 
