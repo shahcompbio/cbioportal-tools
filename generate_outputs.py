@@ -1,5 +1,6 @@
 import click
 import csv
+import gzip
 import logging
 import re
 
