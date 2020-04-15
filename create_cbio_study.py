@@ -208,10 +208,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
 
                 dataset_id = f'{patient_id}-{sample}-snvs'
-                # convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
+                convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
 
                 dataset_id = f'{patient_id}-{sample}-indels'
-                # convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
+                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
 
                 if doc['datatype'] == 'WGS':
                     with gzip.open(doc['titan_segs'], 'rt') as titan_segs:
