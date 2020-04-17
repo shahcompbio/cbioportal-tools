@@ -185,6 +185,7 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data['hugo_symbol'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[0])
     data['entrez_id'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[1])
     data['median_logr'] = np.log2(data['copy'] / 2)
+    data['median_logr'] = data['median_logr'].fillna(np.exp(-8))
     data['num.mark'] = (data['width'] / 500000).astype(int)
 
     data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end'})
