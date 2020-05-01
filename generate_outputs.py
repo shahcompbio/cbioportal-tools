@@ -1,5 +1,6 @@
 import click
 import csv
+import gzip
 import logging
 import re
 
@@ -14,9 +15,13 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
-    # igv_file = open(igv_segs, 'r')
-    next(igv_segs)
-    igv_reader = csv.reader(igv_segs, delimiter='\t')
+    if igv_segs.endswith('.gz'):
+        igv_file = gzip.open(igv_segs, 'rt')
+    else:
+        igv_file = open(igv_segs, 'r')
+
+    next(igv_file)
+    igv_reader = csv.reader(igv_file, delimiter='\t')
     
     # test file: titan_segs.txt
     next(titan_segs)
@@ -174,8 +179,10 @@ def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missi
                 # gene end point
                 if line[7] not in ensembl_dict:
                     ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
-                
-                ensembl_dict[line[7]][0].append(int(line[1]))
+                try:
+                    ensembl_dict[line[7]][0].append(int(line[1]))
+                except:
+                    raise Exception(line)
                 ensembl_dict[line[7]][1].append(int(line[2]))
                 ensembl_dict[line[7]][2].append(int(line[3]))
                 ensembl_dict[line[7]][3].append(int(line[4]))

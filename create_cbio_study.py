@@ -13,17 +13,17 @@ afterwards:
 '''
 
 import click
+import hmmcopy
 import gzip
 import yaml
 
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
-from filter_vcfs import filter_vcfs
 from generate_outputs import extract, transform, load
-from merge_outputs import merge_all_data as merge_outputs
+from merge_outputs import merge_all_data as merge_outputs, merge_maf_data
 from pathlib import Path
 
 
-def create_study(patient_yaml, path_to_output_study):
+def create_study(study_info, path_to_output_study):
     '''
     prerequisites:
     data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
@@ -32,11 +32,11 @@ def create_study(patient_yaml, path_to_output_study):
     Please see cbioportal/docs/File-Formats.md on GitHub for examples
     '''
     
-    type_of_cancer = click.prompt('Please enter type of cancer', default='ovary')
-    cancer_study_identifier = click.prompt('Please enter a cancer study identifier', default='twins_shahlab_2020')
-    name = click.prompt('Please enter a name', default='TWINS (Shah Lab, 2020)')
-    description = click.prompt('Please enter a description', default='Mutation data in TWINS cases')
-    short_name = click.prompt('Please enter a short name', default='TWINS (Shahlab)')
+    type_of_cancer = study_info['type_of_cancer']
+    cancer_study_identifier = study_info['cancer_study_identifier']
+    name = study_info['name']
+    description = study_info['description']
+    short_name = study_info['short_name']
     
     meta_study = open(path_to_output_study + 'meta_study.txt', 'w+')
     meta_study.write('type_of_cancer: ' + type_of_cancer + '\n' \
@@ -88,7 +88,7 @@ def create_study(patient_yaml, path_to_output_study):
                     + 'PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
     
     case_list_ids = []
-    for patient, doc in patient_yaml.items():
+    for patient, doc in study_info['patients'].items():
         for sample, _ in doc.items():
             data_clinical_sample.write(patient + '\t' + sample + '\t' + type_of_cancer.upper() + '\n')
             case_list_ids.append(sample)
@@ -131,6 +131,58 @@ def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, outp
     load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
 
 
+def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
+    '''
+    original code by Diljot Grewal
+
+    museq_paired and strekla_snv,
+    take position intersection plus probability filter of 0.85
+    (keep positions >= 0.85 that are in both)
+
+    modifications: take museq and strelka directly as input, output
+    to temp_dir, take sample id as input and append to output
+    filtered filename
+    '''
+
+    museq_filtered = work_dir + '{}_museq_filtered.vcf.gz'.format(sample_id)
+
+    strelka_ref = set()
+
+    with gzip.open(strelka_vcf, 'rt') as strelka_data:
+        for line in strelka_data:
+            if line.startswith('#'):
+                continue
+
+            line = line.strip().split()
+            
+            chrom = line[0]
+            pos = line[1]
+            
+            strelka_ref.add((chrom, pos))
+
+    with gzip.open(museq_vcf, 'rt') as museq_data, gzip.open(museq_filtered, 'wt') as museqout:
+        for line in museq_data:
+            if line.startswith('#'):
+                museqout.write(line)
+                continue
+            
+            line = line.strip().split()
+            chrom = line[0]
+            pos = line[1]
+            
+            if ((chrom, pos))  not in strelka_ref:
+                continue
+            
+            pr = line[7].split(';')[0].split('=')[1]
+            if float(pr) < 0.85:
+                continue
+            
+            outstr = '\t'.join(line)+'\n'
+            museqout.write(outstr)
+
+    return museq_filtered
+
+
 @click.command()
 @click.argument('input_yaml')
 @click.argument('path_to_output_study')
@@ -149,18 +201,37 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         
-        create_study(yaml_file['patients'], path_to_output_study)
+        create_study(yaml_file, path_to_output_study)
 
-        for _, doc in yaml_file['patients'].items():
+        for patient_id, doc in yaml_file['patients'].items():
             for sample, doc in doc.items():
                 museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                convert_vcf_to_maf(museq_filtered, sample, hgnc_file, temp_dir)
-                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, hgnc_file, temp_dir)
-                
-                with gzip.open(doc['titan_igv'], 'rt') as titan_igv, gzip.open(doc['titan_segs'], 'rt') as titan_segs:
-                    generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample, temp_dir)        
-        
-    merge_outputs(temp_dir, path_to_output_study)    
+
+                dataset_id = f'{patient_id}-{sample}-snvs'
+                convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
+
+                dataset_id = f'{patient_id}-{sample}-indels'
+                convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
+
+                if doc['datatype'] == 'WGS':
+                    with gzip.open(doc['titan_segs'], 'rt') as titan_segs:
+                        generate_outputs(gtf_file, hgnc_file, doc['titan_igv'], titan_segs, sample, temp_dir)        
+
+                elif doc['datatype'] == 'SCWGS':
+                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
+                    genes = hmmcopy.read_gene_data(gtf_file)
+                    
+                    overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
+                    hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
+
+                    hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
+                    gene_dict, seg_dict = transform(hmmcopy_extract, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
+                    load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
+
+                else:
+                    raise ValueError(f'unrecognized data type {doc["datatype"]}')
+
+    merge_outputs(temp_dir, path_to_output_study)
 
 
 if __name__ == '__main__':
