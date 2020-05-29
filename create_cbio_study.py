@@ -15,11 +15,12 @@ afterwards:
 import click
 import hmmcopy
 import gzip
+import pandas as pd
 import yaml
 
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
 from generate_outputs import extract, transform, load
-from merge_outputs import merge_all_data as merge_outputs, merge_maf_data
+from merge_outputs import merge_all_data as merge_outputs
 from pathlib import Path
 
 
@@ -183,6 +184,41 @@ def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
     return museq_filtered
 
 
+def merge_hmmcopy(hmmcopy_files, temp_dir):
+    final_df = pd.read_csv(hmmcopy_files.pop(0), dtype=object)
+    
+    for file in hmmcopy_files:
+        df = pd.read_csv(file, dtype=object)
+        final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+    
+    final_df.to_csv(temp_dir + 'hmmcopy_csv', index=None)
+
+
+def calculate_counts(counts_files, patient_id, sample_id, temp_dir):
+    usecols = ['chrom','coord','ref','alt', 'ref_counts', 'alt_counts']
+    final_df = pd.DataFrame(columns=usecols)
+    for counts_file in counts_files:
+        for df in pd.read_csv(counts_file, chunksize=1e6, usecols=usecols):
+            final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+            final_df = final_df.groupby(['chrom','coord','ref','alt'], as_index=False).agg('sum')
+
+    final_df = final_df.rename(columns={'ref_counts': 't_ref_count', 'alt_counts': 't_alt_count'})
+    final_df.to_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', index=None, sep='\t')
+
+
+def add_counts_to_maf(patient_id, sample_id, temp_dir):
+    n_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+    t_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+
+    maf = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
+    maf = maf.drop(columns=['t_ref_count', 't_alt_count', 'n_ref_count', 'n_alt_count'])
+    
+    maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
+    maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
+    
+    maf.to_csv(temp_dir + patient_id + '_' + sample_id + '.maf', index=None, sep='\t')
+
+
 @click.command()
 @click.argument('input_yaml')
 @click.argument('path_to_output_study')
@@ -203,23 +239,34 @@ def main(input_yaml, path_to_output_study, temp_dir):
         
         create_study(yaml_file, path_to_output_study)
 
-        for patient_id, doc in yaml_file['patients'].items():
-            for sample, doc in doc.items():
-                if 'museq_vcf' in doc and 'strelka_vcf' in doc:
-                    museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                    dataset_id = f'{patient_id}-{sample}-snvs'
-                    convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
-
-                dataset_id = f'{patient_id}-{sample}-indels'
-                if 'strelka_indel_vcf' in doc:
-                    convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
-
+        for patient_id, _ in yaml_file['patients'].items():
+            for sample, doc in yaml_file['patients'][patient_id].items():
                 if doc['datatype'] == 'WGS':
+                    if 'museq_vcf' in doc and 'strelka_vcf' in doc:
+                        museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
+                        dataset_id = f'{patient_id}-{sample}-snvs'
+                        convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
+
+                    dataset_id = f'{patient_id}-{sample}-indels'
+                    
+                    if 'strelka_indel_vcf' in doc:
+                        convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
+
                     with gzip.open(doc['titan_segs'], 'rt') as titan_segs:
                         generate_outputs(gtf_file, hgnc_file, doc['titan_igv'], titan_segs, sample, temp_dir)        
 
                 elif doc['datatype'] == 'SCWGS':
-                    cnv = hmmcopy.read_copy_data(doc['hmmcopy_csv'], filter_normal=doc['filter_normal'])
+                    hmmcopy_list = []
+                    snv_counts = []
+
+                    for library_id, doc in yaml_file['patients'][patient_id][sample].items():
+                        hmmcopy_list.append(doc['hmmcopy_csv'])
+                        snv_counts.append(doc['snv_counts_csv'])
+
+                    merge_hmmcopy(hmmcopy_list, temp_dir)
+                    calculate_counts(snv_counts, patient_id, sample, temp_dir)
+                    
+                    cnv = hmmcopy.read_copy_data(temp_dir + 'hmmcopy_csv', filter_normal=False)
                     genes = hmmcopy.read_gene_data(gtf_file)
                     
                     overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
@@ -228,6 +275,12 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
                     gene_dict, seg_dict = transform(hmmcopy_extract, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
                     load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
+                    
+                    n_file = Path(temp_dir + sample + '.csv')
+                    t_file = Path(temp_dir + sample + '_tumour_counts.csv')
+                    maf = Path(temp_dir + sample + '.maf')
+                    if n_file.is_file() and t_file.is_file() and maf.is_file():
+                        add_counts_to_maf(patient_id, sample, temp_dir)
 
                 else:
                     raise ValueError(f'unrecognized data type {doc["datatype"]}')
