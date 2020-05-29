@@ -208,13 +208,13 @@ def calculate_counts(counts_files, patient_id, sample_id, temp_dir):
 
 def add_counts_to_maf(patient_id, sample_id, temp_dir):
     n_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
-    t_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+    # t_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
 
     maf = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
-    maf = maf.drop(columns=['t_ref_count', 't_alt_count', 'n_ref_count', 'n_alt_count'])
+    maf = maf.drop(columns=['n_ref_count', 'n_alt_count'])
     
     maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
-    maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
+    # maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
     maf.to_csv(temp_dir + patient_id + '_' + sample_id + '.maf', index=None, sep='\t')
 
@@ -261,10 +261,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
                     for library_id, doc in yaml_file['patients'][patient_id][sample].items():
                         hmmcopy_list.append(doc['hmmcopy_csv'])
-                        snv_counts.append(doc['snv_counts_csv'])
+                        # snv_counts.append(doc['snv_counts_csv'])
 
                     merge_hmmcopy(hmmcopy_list, temp_dir)
-                    calculate_counts(snv_counts, patient_id, sample, temp_dir)
+                    # calculate_counts(snv_counts, patient_id, sample, temp_dir)
                     
                     cnv = hmmcopy.read_copy_data(temp_dir + 'hmmcopy_csv', filter_normal=False)
                     genes = hmmcopy.read_gene_data(gtf_file)
@@ -277,9 +277,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
                     
                     n_file = Path(temp_dir + sample + '.csv')
-                    t_file = Path(temp_dir + sample + '_tumour_counts.csv')
+                    # t_file = Path(temp_dir + sample + '_tumour_counts.csv')
                     maf = Path(temp_dir + sample + '.maf')
-                    if n_file.is_file() and t_file.is_file() and maf.is_file():
+                    if n_file.is_file() and maf.is_file():
                         add_counts_to_maf(patient_id, sample, temp_dir)
 
                 else:
