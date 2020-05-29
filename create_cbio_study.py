@@ -260,6 +260,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     snv_counts = []
 
                     for library_id, doc in yaml_file['patients'][patient_id][sample].items():
+                        if library_id == 'datatype':
+                            continue
                         hmmcopy_list.append(doc['hmmcopy_csv'])
                         snv_counts.append(doc['snv_counts_csv'])
 
