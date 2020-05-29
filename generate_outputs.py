@@ -3,9 +3,13 @@ import csv
 import gzip
 import logging
 import re
+import sys
 
 from io import StringIO
 from scipy.stats import norm
+
+
+csv.field_size_limit(sys.maxsize)
 
 
 # args mus be full filepaths
