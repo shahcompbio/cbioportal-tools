@@ -204,22 +204,22 @@ def calculate_counts(counts_files, patient_id, sample_id, temp_dir):
             final_df = final_df.groupby(['chrom','coord','ref','alt'], as_index=False).agg('sum')
 
     final_df = final_df.rename(columns={'ref_counts': 't_ref_count', 'alt_counts': 't_alt_count'})
-    final_df.to_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', index=None, sep='\t')
+    final_df.to_csv(temp_dir + sample_id + '_tumour_counts.csv', index=None, sep='\t')
 
 
 def add_counts_to_maf(patient_id, sample_id, temp_dir):
-    n_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+    n_counts = pd.read_csv(temp_dir + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
     
-    maf = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
+    maf = pd.read_csv(temp_dir + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
     maf = maf.drop(columns=['n_ref_count', 'n_alt_count'])
     maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
-    if path.exists(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv'):
-        t_counts = pd.read_csv(temp_dir + patient_id + '_' + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+    if path.exists(temp_dir + sample_id + '_tumour_counts.csv'):
+        t_counts = pd.read_csv(temp_dir + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
         maf = maf.drop(columns=['t_ref_count', 't_alt_count'])
         maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
-    maf.to_csv(temp_dir + patient_id + '_' + sample_id + '.maf', index=None, sep='\t')
+    maf.to_csv(temp_dir + sample_id + '.maf', index=None, sep='\t')
 
 
 @click.command()
