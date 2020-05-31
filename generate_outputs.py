@@ -24,6 +24,7 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     else:
         igv_file = open(igv_segs, 'r')
 
+    print(igv_segs)
     next(igv_file)
     igv_reader = csv.reader(igv_file, delimiter='\t')
     

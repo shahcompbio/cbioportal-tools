@@ -211,7 +211,6 @@ def add_counts_to_maf(patient_id, sample_id, temp_dir):
     n_counts = pd.read_csv(temp_dir + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
     
     maf = pd.read_csv(temp_dir + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
-    print(maf.head())
     maf = maf.drop(columns=['n_ref_count', 'n_alt_count'])
     maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
