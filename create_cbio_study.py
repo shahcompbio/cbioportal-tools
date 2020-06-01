@@ -16,6 +16,7 @@ import click
 import hmmcopy
 import gzip
 import pandas as pd
+import subprocess
 import yaml
 
 from convert_vcf_to_maf import convert as convert_vcf_to_maf
@@ -241,6 +242,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gtf_file = yaml_file['gtf']
         
         create_study(yaml_file, path_to_output_study)
+
+        subprocess.check_call(['module', 'load', 'singularity'])
 
         for patient_id, _ in yaml_file['patients'].items():
             for sample, doc in yaml_file['patients'][patient_id].items():
