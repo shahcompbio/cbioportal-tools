@@ -243,7 +243,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         
         create_study(yaml_file, path_to_output_study)
 
-        subprocess.check_call(['module', 'load', 'singularity'])
+        subprocess.check_call(('module', 'load', 'singularity').split())
 
         for patient_id, _ in yaml_file['patients'].items():
             for sample, doc in yaml_file['patients'][patient_id].items():
