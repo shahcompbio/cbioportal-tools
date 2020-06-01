@@ -21,10 +21,12 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     
     # test file: igv_segs.txt
     kind = filetype.guess(igv_segs)
-    if kind.extension == 'gz':
+    if kind is None:
+        igv_file = open(igv_segs, 'r')
+    elif kind.extension == 'gz':
         igv_file = gzip.open(igv_segs, 'rt')
     else:
-        igv_file = open(igv_segs, 'r')
+        print('this should not happen, lol')
 
     print(igv_segs)
     next(igv_file)
