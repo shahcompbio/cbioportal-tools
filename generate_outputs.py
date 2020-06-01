@@ -1,5 +1,6 @@
 import click
 import csv
+import filetype
 import gzip
 import logging
 import re
@@ -19,7 +20,8 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
-    if igv_segs.endswith('.gz'):
+    kind = filetype.guess('igv_segs')
+    if kind.extension == 'gz':
         igv_file = gzip.open(igv_segs, 'rt')
     else:
         igv_file = open(igv_segs, 'r')
