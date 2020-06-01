@@ -71,16 +71,19 @@ def merge_maf_data(input_dir, output_dir):
         return
 
     files_to_merge = sorted(files_to_merge)
+    dfs_to_merge = []
     
-    with open(output_dir + 'data_mutations_extended.maf', 'w+') as outfile:
-        with open(files_to_merge.pop(0)) as infile:
-            outfile.write(infile.read())
+    for file in files_to_merge:
+        data_frame = pd.read_csv(file, delimiter='\t', dtype=str)
         
-        for file in files_to_merge:
-            with open(file) as infile:
-                # skip 2 lines in each file after the first
-                for line in infile.readlines()[2:]:
-                    outfile.write(line)
+        dfs_to_merge.append(data_frame)
+
+    merged_file = dfs_to_merge.pop(0)
+    
+    while dfs_to_merge:
+        merged_file = pd.concat(dfs_to_merge.pop())
+
+    merged_file.to_csv(output_dir + 'data_mutations_extended.maf', index=None, sep='\t')
 
 
 def merge_all_data(input_dir, output_dir):
