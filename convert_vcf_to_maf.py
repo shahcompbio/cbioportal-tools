@@ -7,13 +7,13 @@ def convert(input_file, sample_id, dataset_id, output_dir):
     assert input_file.endswith('.gz')
 
     vcf_filename = os.path.join(output_dir, f'{dataset_id}.vcf')
-    maf_filename = os.path.join(output_dir, f'{dataset_id}.maf')
+    maf_filename = os.path.join(output_dir, f'{dataset_id}-generated.maf')
 
     with open(vcf_filename, 'w') as f:
         subprocess.check_call(['gunzip', '-c', input_file], stdout=f)
 
     cmd = (f'singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf \
-            docker://quay.io/biocontainers/vcf2maf:1.6.17--2 \
+            docker://wgspipeline/vcf2maf:v0.0.1 \
             vcf2maf.pl \
             --input-vcf {vcf_filename} \
             --output-maf {maf_filename} \

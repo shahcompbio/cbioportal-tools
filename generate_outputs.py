@@ -1,11 +1,16 @@
 import click
 import csv
+import filetype
 import gzip
 import logging
 import re
+import sys
 
 from io import StringIO
 from scipy.stats import norm
+
+
+csv.field_size_limit(sys.maxsize)
 
 
 # args mus be full filepaths
@@ -15,11 +20,15 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     extracted_file.write('chr\tseg_start\tseg_end\tcopy_number\ttitan_state\tnum.mark\tmedian_logr\tensembl_id\thugo_symbol\tentrez_id\tgene_start\tgene_end\n')
     
     # test file: igv_segs.txt
-    if igv_segs.endswith('.gz'):
+    kind = filetype.guess(igv_segs)
+    if kind is None:
+        igv_file = open(igv_segs, 'r')
+    elif kind.extension == 'gz':
         igv_file = gzip.open(igv_segs, 'rt')
     else:
-        igv_file = open(igv_segs, 'r')
+        print('this should not happen, lol')
 
+    print(igv_segs)
     next(igv_file)
     igv_reader = csv.reader(igv_file, delimiter='\t')
     
