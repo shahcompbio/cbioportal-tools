@@ -81,7 +81,7 @@ def merge_maf_data(input_dir, output_dir):
     merged_file = dfs_to_merge.pop(0)
     
     while dfs_to_merge:
-        merged_file = pd.concat(dfs_to_merge.pop())
+        merged_file = pd.concat([merged_file, dfs_to_merge.pop()])
 
     merged_file.to_csv(output_dir + 'data_mutations_extended.maf', index=None, sep='\t')
 
