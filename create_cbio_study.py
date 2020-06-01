@@ -219,7 +219,7 @@ def add_counts_to_maf(patient_id, sample_id, temp_dir):
         maf = maf.drop(columns=['t_ref_count', 't_alt_count'])
         maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
-    maf.to_csv(temp_dir + sample_id + '.maf', index=None, sep='\t')
+    maf.to_csv(temp_dir + sample_id + '-generated.maf', index=None, sep='\t')
 
 
 @click.command()
