@@ -64,7 +64,7 @@ def merge_log_seg_data(input_dir, output_dir):
 
 
 def merge_maf_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*-generated.maf') if not os.path.basename(fn).startswith('data_mutations_extended')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '.maf')]
     
     if not files_to_merge:
         print('No .maf files found. Please add some and rerun.')
@@ -74,10 +74,7 @@ def merge_maf_data(input_dir, output_dir):
     dfs_to_merge = []
     
     for file in files_to_merge:
-        if ('-indels-generated.maf' in file) or ('-snvs-generated.maf' in file):
-            data_frame = pd.read_csv(file, delimiter='\t', dtype=str, skiprows=1)
-        else:
-            data_frame = pd.read_csv(file, delimiter='\t', dtype=str)
+        data_frame = pd.read_csv(file, delimiter='\t', dtype=str, skiprows=1)
         
         dfs_to_merge.append(data_frame)
 
