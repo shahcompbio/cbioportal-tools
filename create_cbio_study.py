@@ -273,10 +273,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         vcf_files[sample].append(library_data['strelka_vcf'])
                         vcf_files[sample].append(library_data['strelka_indel_vcf'])
 
-                        hmmcopy_list.append(sample_data['hmmcopy_csv'])  
+                        hmmcopy_list.append(library_data['hmmcopy_csv'])  
                         
-                        if 'snv_counts_csv' in sample_data:
-                            snv_counts.append(sample_data['snv_counts_csv'])
+                        if 'snv_counts_csv' in library_data:
+                            snv_counts.append(library_data['snv_counts_csv'])
 
                     merge_hmmcopy(hmmcopy_list, temp_dir)
                     
