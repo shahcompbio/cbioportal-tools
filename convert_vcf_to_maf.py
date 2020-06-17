@@ -2,6 +2,8 @@ import click
 import os
 import subprocess
 
+from run import sort_vcf_file
+
 
 def convert(input_file, sample_id, dataset_id, output_dir):
     assert input_file.endswith('.gz')
@@ -11,6 +13,8 @@ def convert(input_file, sample_id, dataset_id, output_dir):
 
     with open(vcf_filename, 'w') as f:
         subprocess.check_call(['gunzip', '-c', input_file], stdout=f)
+
+    sort_vcf_file(vcf_filename, vcf_filename)
 
     cmd = (f'/opt/local/singularity/3.3.0/bin/singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf \
             docker://wgspipeline/vcf2maf:v0.0.1 \
