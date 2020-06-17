@@ -221,7 +221,7 @@ def add_counts_to_maf(patient_id, sample_id, temp_dir):
         maf = maf.drop(columns=['t_ref_count', 't_alt_count'])
         maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
     
-    maf.to_csv(temp_dir + sample_id + '-generated.maf', index=None, sep='\t')
+    maf.to_csv(temp_dir + sample_id + '.maf', index=None, sep='\t')
 
 
 @click.command()
@@ -310,12 +310,13 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         generate_mafs(vcf_files, vep_dir, temp_dir, maf_outputs, vcf_outputs)
 
-        for sample in vcf_files:
-            n_file = Path(temp_dir + sample + '.csv')
+        for patient_id, patient_data in yaml_file['patients'].items():
+            for sample, _ in patient_data.items():
+                n_file = Path(temp_dir + sample + '.csv')
             
-            maf = Path(temp_dir + sample + '.maf')
-            if n_file.is_file() and maf.is_file():
-                add_counts_to_maf(patient_id, sample, temp_dir)
+                maf = Path(temp_dir + sample + '.maf')
+                if n_file.is_file() and maf.is_file():
+                    add_counts_to_maf(patient_id, sample, temp_dir)
 
     merge_outputs(temp_dir, path_to_output_study)
 

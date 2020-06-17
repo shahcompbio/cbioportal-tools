@@ -7,7 +7,7 @@ def convert(input_file, sample_id, dataset_id, output_dir):
     assert input_file.endswith('.gz')
 
     vcf_filename = os.path.join(output_dir, f'{dataset_id}.vcf')
-    maf_filename = os.path.join(output_dir, f'{dataset_id}-generated.maf')
+    maf_filename = os.path.join(output_dir, f'{dataset_id}.maf')
 
     with open(vcf_filename, 'w') as f:
         subprocess.check_call(['gunzip', '-c', input_file], stdout=f)
