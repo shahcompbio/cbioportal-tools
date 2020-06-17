@@ -28,7 +28,6 @@ def extract(gtf, hgnc, igv_segs, titan_segs):
     else:
         print('this should not happen, lol')
 
-    print(igv_segs)
     next(igv_file)
     igv_reader = csv.reader(igv_file, delimiter='\t')
     
