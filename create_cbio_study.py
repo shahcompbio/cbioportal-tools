@@ -269,9 +269,14 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         if library_id == 'datatype':
                             continue
 
-                        vcf_files[sample].append(library_data['museq_vcf'])
-                        vcf_files[sample].append(library_data['strelka_vcf'])
-                        vcf_files[sample].append(library_data['strelka_indel_vcf'])
+                        if 'museq_vcf' in library_data:
+                            vcf_files[sample].append(library_data['museq_vcf'])
+                        
+                        if 'strelka_vcf' in library_data:
+                            vcf_files[sample].append(library_data['strelka_vcf'])
+                        
+                        if 'strelka_indel_vcf' in library_data:
+                            vcf_files[sample].append(library_data['strelka_indel_vcf'])
 
                         hmmcopy_list.append(library_data['hmmcopy_csv'])  
                         
