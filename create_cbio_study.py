@@ -15,6 +15,7 @@ afterwards:
 import click
 import hmmcopy
 import gzip
+import os
 import pandas as pd
 import subprocess
 import yaml
