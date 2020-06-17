@@ -93,7 +93,7 @@ def create_study(study_info, path_to_output_study):
     
     case_list_ids = []
     for patient, patient_data in study_info['patients'].items():
-        for sample, _ in sample_data.items():
+        for sample, _ in patient_data.items():
             data_clinical_sample.write(patient + '\t' + sample + '\t' + type_of_cancer.upper() + '\n')
             case_list_ids.append(sample)
     
