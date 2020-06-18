@@ -79,6 +79,7 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     hgnc = hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'NCBI Gene ID': 'Entrez_Gene_Id', 'Ensembl gene ID': 'gene_id'})
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
+    genes = genes.fillna('')
 
     return genes
 
