@@ -121,7 +121,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
             aggregated_cn_data[sample]['sample'] = sample
             aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
             aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
-            aggregated_cn_data[sample]['log_change'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
+            aggregated_cn_data[sample]['seg.mean'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
+            aggregated_cn_data[sample]['num.mark'] = (aggregated_cn_data[sample]['length'] / 500000).astype(int)
+            aggregated_cn_data[sample] = aggregated_cn_data[sample].rename(columns={'sample': 'ID', 'chromosome': 'chrom', 'start': 'loc.start', 'end': 'loc.end'})
+            aggregated_cn_data[sample] = aggregated_cn_data[sample][['ID', 'chrom', 'loc.start', 'loc.end', 'num.mark', 'seg.mean']]
 
         print('aggregated_cn_data')
         print(aggregated_cn_data)
