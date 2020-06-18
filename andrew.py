@@ -134,3 +134,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         print(genes_cn_data)
 
     merge_outputs(temp_dir, path_to_output_study)
+
+
+if __name__ == '__main__':
+    main()
