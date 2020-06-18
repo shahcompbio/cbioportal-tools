@@ -64,7 +64,7 @@ def merge_log_seg_data(input_dir, output_dir):
 
 
 def merge_maf_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '.maf')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.maf')]
     
     if not files_to_merge:
         print('No .maf files found. Please add some and rerun.')
