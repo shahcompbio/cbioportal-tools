@@ -70,7 +70,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             for sample, sample_data in patient_data.items():
                 if sample_data['datatype'] == 'WGS':
 
-                    with pd.HDFStore(filename) as store:
+                    with pd.HDFStore(sample_data['remixt']) as store:
                         stats = store['stats']
                         stats = stats[stats['proportion_divergent'] < 0.5]
                         
