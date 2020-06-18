@@ -105,7 +105,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
             'sample', 'ploidy', 'proportion_divergent',
             'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
 
-        print(stats_data)
         
         aggregated_cn_data = {}
 
@@ -116,9 +115,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 stable_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
-
-        print('aggregated_cn_data')
-        print(aggregated_cn_data)
 
         
         genes_cn_data = {}
@@ -214,6 +210,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
             aggregated_cn_data[sample]['seg.mean'] = aggregated_cn_data[sample]['seg.mean'].fillna(np.exp(-8))
             aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['seg.mean'] == np.NINF, 'seg.mean'] = np.exp(-8)
             aggregated_cn_data[sample].to_csv(temp_dir + sample + '_log_seg_data.seg', index=None, sep='\t')
+
+        print('aggregated_cn_data')
+        print(aggregated_cn_data)
 
     
     merge_outputs(temp_dir, path_to_output_study)
