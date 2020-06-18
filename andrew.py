@@ -1,4 +1,5 @@
 import click
+import numpy as np
 import pandas as pd
 import wgs_analysis.algorithms.cnv
 import yaml
@@ -108,12 +109,17 @@ def main(input_yaml, path_to_output_study, temp_dir):
         aggregated_cn_data = {}
 
         for sample, cn in cn_data.items():
-            aggregated_cn_data[sample] = wgs_analysis.algorithms.cnv.aggregate_adjacent(
+            data = wgs_analysis.algorithms.cnv.aggregate_adjacent(
                 cn,
                 value_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
                 stable_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
+            data['sample'] = sample
+            data = data.merge(stats_data[['sample', 'ploidy']])
+            data['total_raw'] = data['major_raw'] + data['minor_raw']
+            data['log_change'] = np.log2(data['total_raw'] / data['ploidy'])
+            aggregated_cn_data[sample] = data
 
         print('aggregated_cn_data')
         print(aggregated_cn_data)
@@ -137,6 +143,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
+        amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
+        amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
         print('genes_cn_data')
         print(genes_cn_data)
 
