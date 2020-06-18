@@ -4,6 +4,7 @@ import wgs_analysis.algorithms.cnv
 import yaml
 
 from create_cbio_study import create_study
+from merge_outputs import merge_all_data as merge_outputs
 from pathlib import Path
 
 
@@ -131,7 +132,39 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
-        print(genes_cn_data)
+        amp_data = []
+
+        for sample, data in genes_cn_data.items():
+            normalize = (
+                data
+                .groupby('gene_id')['overlap_width']
+                .sum().rename('sum_overlap_width').reset_index())
+
+            data['total_raw_weighted'] = data['total_raw'] * data['overlap_width']
+
+            data = data.groupby(['gene_id'])['total_raw_weighted'].sum().reset_index()
+            data = data.merge(normalize)
+            data['total_raw_mean'] = data['total_raw_weighted'] / data['sum_overlap_width']
+            data['sample'] = sample
+
+            amp_data.append(data[['gene_id', 'total_raw_mean', 'sample']])
+
+        amp_data = pd.concat(amp_data)
+
+        gene_cols = [
+            'gene_id',
+            'chromosome',
+            'gene_start',
+            'gene_end',
+            'gene_name',
+            'cn_type',
+            'Tumour Types(Somatic)',
+        ]
+        amp_data = amp_data.merge(cgc_genes[gene_cols].query('cn_type == "amplification"').drop_duplicates())
+        amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
+        amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
+
+        amp_data.head()
 
     merge_outputs(temp_dir, path_to_output_study)
 
