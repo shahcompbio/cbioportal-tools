@@ -105,6 +105,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         'sample', 'ploidy', 'proportion_divergent',
                         'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
 
+        print(stats_data)
         
         aggregated_cn_data = {}
 
