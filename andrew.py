@@ -98,12 +98,12 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         cn_data[sample] = cn
                         stats_data.append(stats)
 
-                    stats_data = pd.DataFrame(stats_data)
-                    stats_data['tumour_proportion'] = 1. - stats_data['normal_proportion']
+        stats_data = pd.DataFrame(stats_data)
+        stats_data['tumour_proportion'] = 1. - stats_data['normal_proportion']
 
-                    stats_data[[
-                        'sample', 'ploidy', 'proportion_divergent',
-                        'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
+        stats_data = stats_data[[
+            'sample', 'ploidy', 'proportion_divergent',
+            'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
 
         print(stats_data)
         
