@@ -104,6 +104,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         'sample', 'ploidy', 'proportion_divergent',
                         'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
 
+        
         aggregated_cn_data = {}
 
         for sample, cn in cn_data.items():
@@ -114,6 +115,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
 
+        
         genes_cn_data = {}
 
         for sample, cn in aggregated_cn_data.items():
@@ -132,6 +134,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
+        
         amp_data = []
 
         for sample, data in genes_cn_data.items():
@@ -157,15 +160,38 @@ def main(input_yaml, path_to_output_study, temp_dir):
             'gene_start',
             'gene_end',
             'gene_name',
-            'cn_type',
-            'Tumour Types(Somatic)',
         ]
-        amp_data = amp_data.merge(cgc_genes[gene_cols].query('cn_type == "amplification"').drop_duplicates())
+        amp_data = amp_data.merge(genes[gene_cols])
         amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
         amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
 
-        amp_data.head()
+        print(amp_data.head())
 
+
+        hdel_data = []
+
+        for sample, data in genes_cn_data.items():
+            data = data[data['total_raw'] < 0.5]
+            data = data.groupby(['gene_id'])['overlap_width'].sum().rename('hdel_width').reset_index()
+            data = data[data['hdel_width'] > 10000]
+            data['sample'] = sample
+
+            hdel_data.append(data[['gene_id', 'hdel_width', 'sample']])
+
+        hdel_data = pd.concat(hdel_data)
+
+        gene_cols = [
+            'gene_id',
+            'chromosome',
+            'gene_start',
+            'gene_end',
+            'gene_name',
+        ]
+        hdel_data = hdel_data.merge(genes[gene_cols])
+
+        print(hdel_data)
+
+    
     merge_outputs(temp_dir, path_to_output_study)
 
 
