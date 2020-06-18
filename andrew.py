@@ -109,17 +109,18 @@ def main(input_yaml, path_to_output_study, temp_dir):
         aggregated_cn_data = {}
 
         for sample, cn in cn_data.items():
-            data = wgs_analysis.algorithms.cnv.aggregate_adjacent(
+            aggregated_cn_data[sample] = wgs_analysis.algorithms.cnv.aggregate_adjacent(
                 cn,
                 value_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
                 stable_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
-            data['sample'] = sample
-            data = data.merge(stats_data[['sample', 'ploidy']])
-            data['total_raw'] = data['major_raw'] + data['minor_raw']
-            # data['log_change'] = np.log2(data['total_raw'] / data['ploidy'])
-            aggregated_cn_data[sample] = data
+
+        for sample in aggregated_cn_data:
+            aggregated_cn_data[sample] = sample
+            aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
+            aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
+            aggregated_cn_data[sample]['log_change'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
 
         print('aggregated_cn_data')
         print(aggregated_cn_data)
