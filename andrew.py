@@ -202,7 +202,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         print(hdel_data)
 
 
-        # segs
+        # clean up segs and write to disk
         for sample in aggregated_cn_data:
             aggregated_cn_data[sample]['sample'] = sample
             aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
@@ -212,7 +212,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             aggregated_cn_data[sample] = aggregated_cn_data[sample].rename(columns={'sample': 'ID', 'chromosome': 'chrom', 'start': 'loc.start', 'end': 'loc.end'})
             aggregated_cn_data[sample] = aggregated_cn_data[sample][['ID', 'chrom', 'loc.start', 'loc.end', 'num.mark', 'seg.mean']]
             aggregated_cn_data[sample]['seg.mean'] = aggregated_cn_data[sample]['seg.mean'].fillna(np.exp(-8))
-            aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
+            aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['seg.mean'] == np.NINF, 'seg.mean'] = np.exp(-8)
             aggregated_cn_data[sample].to_csv(temp_dir + sample + '_log_seg_data.seg', index=None, sep='\t')
 
     
