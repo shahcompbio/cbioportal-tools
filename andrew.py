@@ -1,4 +1,9 @@
+import click
 import pandas as pd
+import yaml
+
+from create_cbio_study import create_study
+from pathlib import Path
 
 
 def load_remixt(sample, filename, min_ploidy=None, max_ploidy=None):
@@ -41,9 +46,6 @@ def load_remixt(sample, filename, min_ploidy=None, max_ploidy=None):
     stats_data[[
         'sample', 'ploidy', 'proportion_divergent',
         'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
-
-    print(cn_data)
-    print(stats_data)
     
     return cn_data, stats_data
 
@@ -71,3 +73,39 @@ def read_gene_data(gtf):
     data = data.groupby(['chromosome', 'gene_id', 'gene_name']).agg({'gene_start':'min', 'gene_end':'max'}).reset_index()
 
     return data
+
+
+def hgnc_lookup(genes, hgnc_file):
+    # TODO
+
+
+@click.command()
+@click.argument('input_yaml')
+@click.argument('path_to_output_study')
+@click.argument('temp_dir')
+def main(input_yaml, path_to_output_study, temp_dir):
+    if not path_to_output_study.endswith('/'):
+        path_to_output_study = path_to_output_study + '/'
+    if not temp_dir.endswith('/'):
+        temp_dir = temp_dir + '/'
+
+    Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
+    Path(temp_dir).mkdir(parents=True, exist_ok=True)
+
+    with open(input_yaml) as file:
+        yaml_file = yaml.full_load(file)
+        hgnc_file = yaml_file['id_mapping']
+        gtf_file = yaml_file['gtf']
+        vcf_files = {}
+        
+        create_study(yaml_file, path_to_output_study)
+        genes = read_gene_data(gtf_file)
+        genes_with_ids = hgnc_lookup(genes, hgnc_file)
+        # TODO
+
+        for patient_id, patient_data in yaml_file['patients'].items():
+            for sample, sample_data in patient_data.items():
+                if sample_data['datatype'] == 'WGS':
+                    # TODO 
+
+    merge_outputs(temp_dir, path_to_output_study)
