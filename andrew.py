@@ -115,6 +115,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
 
+        print('aggregated_cn_data')
+        print(aggregated_cn_data)
+
         
         genes_cn_data = {}
 
@@ -133,6 +136,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'major_2',
                     'minor_2',
                 ])
+
+        print('genes_cn_data')
+        print(genes_cn_data)
 
         
         amp_data = []
@@ -165,6 +171,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
         amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
 
+        print('amp_data')
         print(amp_data.head())
 
 
@@ -189,6 +196,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         ]
         hdel_data = hdel_data.merge(genes[gene_cols])
 
+        print('hdel_data')
         print(hdel_data)
 
     
