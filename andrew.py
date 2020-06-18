@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def load_cnv(sample, filename, min_ploidy=None, max_ploidy=None):
+def load_remixt(sample, filename, min_ploidy=None, max_ploidy=None):
     cn_data = {}
     stats_data = []
     
@@ -46,3 +46,28 @@ def load_cnv(sample, filename, min_ploidy=None, max_ploidy=None):
     print(stats_data)
     
     return cn_data, stats_data
+
+
+def read_gene_data(gtf):
+    data = pd.read_csv(
+        gtf,
+        delimiter='\t',
+        names=['chromosome', 'gene_start', 'gene_end', 'info'],
+        usecols=[0,3,4,8],
+        converters={'chromosome': str},
+    )
+
+    def extract_info(info):
+        info_dict = {}
+        for a in info.split('; '):
+            k, v = a.split(' ')
+            info_dict[k] = v.strip(';').strip('"')
+        return info_dict
+    
+    data['info'] = data['info'].apply(extract_info)
+    data['gene_id'] = data['info'].apply(lambda a: a['gene_id'])
+    data['gene_name'] = data['info'].apply(lambda a: a['gene_name'])
+
+    data = data.groupby(['chromosome', 'gene_id', 'gene_name']).agg({'gene_start':'min', 'gene_end':'max'}).reset_index()
+
+    return data
