@@ -307,7 +307,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         csv_outputs = {sample: os.path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
         maf_outputs = {sample: os.path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
 
-        vep_dir = '/juno/work/shah/svatrt/vcf2maf/cache/'
+        vep_dir = '/vcf2maf/cache/'
 
         for sample, sample_vcf_files in vcf_files.items():
             vcfdata = get_vcf_data(sample_vcf_files)
