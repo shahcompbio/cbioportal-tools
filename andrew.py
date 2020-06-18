@@ -197,7 +197,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # print(hdel_data)
 
 
-        gistic_data = aggregated_cn_data:
+        gistic_data = aggregated_cn_data
         for sample, data in gistic_data.items():
             data = hgnc_lookup(data, hgnc_file)
             data = data.merge(stats_data[['sample', 'ploidy']])
