@@ -198,18 +198,20 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
 
         gistic_data = amp_data
-        for sample, data in gistic_data.items():
-            data = hgnc_lookup(data, hgnc_file)
-            if data['log_change'] < -0.5:
-                data[data['sample']] = -1
-            elif -0.5 <= data['log_change'] <= 0.5:
-                data[data['sample']] = 0
-            elif 0.5 < data['log_change'] < 1:
-                data[data['sample']] = 1
+        for index, row in gistic_data.iterrows():
+            row = hgnc_lookup(row, hgnc_file)
+            if row['log_change'] < -0.5:
+                row[row['sample']] = -1
+            elif -0.5 <= row['log_change'] < 0.5:
+                row[row['sample']] = 0
+            elif 0.5 <= row['log_change'] < 1:
+                row[row['sample']] = 1
+            elif row['log_change'] >= 1:
+                row[row['sample']] = 2
             else:
-                print('log_change value is :' + data['log_change'])
-            data = data[['Hugo_Symbol', 'Entrez_Gene_Id', data['sample']]]
-            print(data)
+                print('log_change value is :' + row['log_change'])
+            row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
+            print(row)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
