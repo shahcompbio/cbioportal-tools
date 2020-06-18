@@ -110,6 +110,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, sample_data in patient_data.items():
                 if sample_data['datatype'] == 'WGS':
+                    pass
                     # TODO 
 
     merge_outputs(temp_dir, path_to_output_study)
