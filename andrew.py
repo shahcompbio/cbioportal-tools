@@ -1,53 +1,10 @@
 import click
 import pandas as pd
+import wgs_analysis.algorithms.cnv
 import yaml
 
 from create_cbio_study import create_study
 from pathlib import Path
-
-
-def load_remixt(sample, filename, min_ploidy=None, max_ploidy=None):
-    cn_data = {}
-    stats_data = []
-    
-    with pd.HDFStore(filename) as store:
-        stats = store['stats']
-        stats = stats[stats['proportion_divergent'] < 0.5]
-        
-        if max_ploidy:
-            stats = stats[stats['ploidy'] < max_ploidy]
-        
-        if min_ploidy:
-            stats = stats[stats['ploidy'] > min_ploidy]
-        
-        stats = stats.sort_values('elbo').iloc[-1]
-        stats['sample'] = sample
-
-        init_id = stats['init_id']
-
-        cn = store[f'/solutions/solution_{init_id}/cn']
-        cn['segment_length'] = cn['end'] - cn['start'] + 1
-        cn['length_ratio'] = cn['length'] / cn['segment_length']
-
-        mix = store[f'/solutions/solution_{init_id}/mix']
-
-        stats['normal_proportion'] = mix[0]
-
-        cn_data[sample] = cn
-        stats_data.append(stats)
-
-    stats_data = pd.DataFrame(stats_data)
-    stats_data['tumour_proportion'] = 1. - stats_data['normal_proportion']
-
-    stats_data[[
-        'sample', 'ploidy', 'proportion_divergent',
-        'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample').to_csv('remixt_stats.csv', index=False)
-
-    stats_data[[
-        'sample', 'ploidy', 'proportion_divergent',
-        'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
-    
-    return cn_data, stats_data
 
 
 def read_gene_data(gtf):
@@ -106,12 +63,72 @@ def main(input_yaml, path_to_output_study, temp_dir):
         create_study(yaml_file, path_to_output_study)
         genes = read_gene_data(gtf_file)
         genes_with_ids = hgnc_lookup(genes, hgnc_file)
-        # TODO
 
+        cn_data = {}
+        stats_data = []
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, sample_data in patient_data.items():
                 if sample_data['datatype'] == 'WGS':
-                    pass
-                    # TODO 
+
+                    with pd.HDFStore(filename) as store:
+                        stats = store['stats']
+                        stats = stats[stats['proportion_divergent'] < 0.5]
+                        
+                        if 'max_ploidy' in sample_data:
+                            stats = stats[stats['ploidy'] < max_ploidy]
+                        
+                        if 'min_ploidy' in sample_data:
+                            stats = stats[stats['ploidy'] > min_ploidy]
+                        
+                        stats = stats.sort_values('elbo').iloc[-1]
+                        stats['sample'] = sample
+
+                        init_id = stats['init_id']
+
+                        cn = store[f'/solutions/solution_{init_id}/cn']
+                        cn['segment_length'] = cn['end'] - cn['start'] + 1
+                        cn['length_ratio'] = cn['length'] / cn['segment_length']
+
+                        mix = store[f'/solutions/solution_{init_id}/mix']
+
+                        stats['normal_proportion'] = mix[0]
+
+                        cn_data[sample] = cn
+                        stats_data.append(stats)
+
+                    stats_data = pd.DataFrame(stats_data)
+                    stats_data['tumour_proportion'] = 1. - stats_data['normal_proportion']
+
+                    stats_data[[
+                        'sample', 'ploidy', 'proportion_divergent',
+                        'tumour_proportion', 'proportion_divergent', 'elbo']].sort_values('sample')
+
+        aggregated_cn_data = {}
+
+        for sample, cn in cn_data.items():
+            aggregated_cn_data[sample] = wgs_analysis.algorithms.cnv.aggregate_adjacent(
+                cn,
+                value_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
+                stable_cols=['major_0', 'minor_0', 'major_1', 'minor_1', 'major_2', 'minor_2'],
+                length_normalized_cols=['major_raw', 'minor_raw'],
+            )
+
+        genes_cn_data = {}
+
+        for sample, cn in aggregated_cn_data.items():
+            cn['width'] = cn['end'] - cn['start']
+            cn['total_raw'] = cn['major_raw'] + cn['minor_raw']
+
+            genes_cn_data[sample] = wgs_analysis.algorithms.cnv.calculate_gene_copy(
+                cn, genes,
+                [
+                    'major_raw',
+                    'minor_raw',
+                    'total_raw',
+                    'major_1',
+                    'minor_1',
+                    'major_2',
+                    'minor_2',
+                ])
 
     merge_outputs(temp_dir, path_to_output_study)
