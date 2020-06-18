@@ -117,15 +117,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
 
-        for sample in aggregated_cn_data:
-            aggregated_cn_data[sample]['sample'] = sample
-            aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
-            aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
-            aggregated_cn_data[sample]['seg.mean'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
-            aggregated_cn_data[sample]['num.mark'] = (aggregated_cn_data[sample]['length'] / 500000).astype(int)
-            aggregated_cn_data[sample] = aggregated_cn_data[sample].rename(columns={'sample': 'ID', 'chromosome': 'chrom', 'start': 'loc.start', 'end': 'loc.end'})
-            aggregated_cn_data[sample] = aggregated_cn_data[sample][['ID', 'chrom', 'loc.start', 'loc.end', 'num.mark', 'seg.mean']]
-
         print('aggregated_cn_data')
         print(aggregated_cn_data)
 
@@ -209,6 +200,20 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         print('hdel_data')
         print(hdel_data)
+
+
+        # segs
+        for sample in aggregated_cn_data:
+            aggregated_cn_data[sample]['sample'] = sample
+            aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
+            aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
+            aggregated_cn_data[sample]['seg.mean'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
+            aggregated_cn_data[sample]['num.mark'] = (aggregated_cn_data[sample]['length'] / 500000).astype(int)
+            aggregated_cn_data[sample] = aggregated_cn_data[sample].rename(columns={'sample': 'ID', 'chromosome': 'chrom', 'start': 'loc.start', 'end': 'loc.end'})
+            aggregated_cn_data[sample] = aggregated_cn_data[sample][['ID', 'chrom', 'loc.start', 'loc.end', 'num.mark', 'seg.mean']]
+            aggregated_cn_data[sample]['seg.mean'] = aggregated_cn_data[sample]['seg.mean'].fillna(np.exp(-8))
+            aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
+            aggregated_cn_data[sample].to_csv(temp_dir + sample + '_log_seg_data.seg', index=None, sep='\t')
 
     
     merge_outputs(temp_dir, path_to_output_study)
