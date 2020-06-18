@@ -143,8 +143,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
-        amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
-        amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
         print('genes_cn_data')
         print(genes_cn_data)
 
