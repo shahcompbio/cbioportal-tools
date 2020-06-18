@@ -196,10 +196,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # print('hdel_data')
         # print(hdel_data)
 
-        print(type(amp_data))
         gistic_data = amp_data
+        gistic_data = hgnc_lookup(gistic_data, hgnc_file)
         for index, row in gistic_data.iterrows():
-            row = hgnc_lookup(row, hgnc_file)
             if row['log_change'] < -0.5:
                 row[row['sample']] = -1
             elif -0.5 <= row['log_change'] < 0.5:
