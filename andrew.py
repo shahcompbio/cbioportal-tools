@@ -131,4 +131,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
+        print(genes_cn_data)
+
     merge_outputs(temp_dir, path_to_output_study)
