@@ -197,18 +197,17 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # print(hdel_data)
 
 
-        gistic_data = aggregated_cn_data
+        gistic_data = amp_data
         for sample, data in gistic_data.items():
             data = hgnc_lookup(data, hgnc_file)
-            data = data.merge(stats_data[['sample', 'ploidy']])
-            if data['ploidy'] < -0.5:
+            if data['log_change'] < -0.5:
                 data[data['sample']] = -1
-            elif -0.5 <= data['ploidy'] <= 0.5:
+            elif -0.5 <= data['log_change'] <= 0.5:
                 data[data['sample']] = 0
-            elif 0.5 < data['ploidy'] < 1:
+            elif 0.5 < data['log_change'] < 1:
                 data[data['sample']] = 1
             else:
-                print('Ploidy value is :' + data['ploidy'])
+                print('log_change value is :' + data['log_change'])
             data = data[['Hugo_Symbol', 'Entrez_Gene_Id', data['sample']]]
             print(data)
 
