@@ -64,7 +64,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
         
         create_study(yaml_file, path_to_output_study)
         genes = read_gene_data(gtf_file)
-        genes_with_ids = hgnc_lookup(genes, hgnc_file)
 
         cn_data = {}
         stats_data = []
@@ -135,8 +134,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
-        print('genes_cn_data')
-        print(genes_cn_data)
+        # print('genes_cn_data')
+        # print(genes_cn_data)
 
         
         amp_data = []
@@ -169,8 +168,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
         amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
 
-        print('amp_data')
-        print(amp_data.head())
+        # print('amp_data')
+        # print(amp_data.head())
 
 
         hdel_data = []
@@ -194,9 +193,24 @@ def main(input_yaml, path_to_output_study, temp_dir):
         ]
         hdel_data = hdel_data.merge(genes[gene_cols])
 
-        print('hdel_data')
-        print(hdel_data)
+        # print('hdel_data')
+        # print(hdel_data)
 
+
+        gistic_data = aggregated_cn_data:
+        for sample, data in gistic_data.items():
+            data = hgnc_lookup(data, hgnc_file)
+            data = data.merge(stats_data[['sample', 'ploidy']])
+            if data['ploidy'] < -0.5:
+                data[data['sample']] = -1
+            elif -0.5 <= data['ploidy'] <= 0.5:
+                data[data['sample']] = 0
+            elif 0.5 < data['ploidy'] < 1:
+                data[data['sample']] = 1
+            else:
+                print('Ploidy value is :' + data['ploidy'])
+            data = data[['Hugo_Symbol', 'Entrez_Gene_Id', data['sample']]]
+            print(data)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
@@ -211,8 +225,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
             aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['seg.mean'] == np.NINF, 'seg.mean'] = np.exp(-8)
             aggregated_cn_data[sample].to_csv(temp_dir + sample + '_log_seg_data.seg', index=None, sep='\t')
 
-        print('aggregated_cn_data')
-        print(aggregated_cn_data)
+        # print('aggregated_cn_data')
+        # print(aggregated_cn_data)
 
     
     merge_outputs(temp_dir, path_to_output_study)
