@@ -116,11 +116,11 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 length_normalized_cols=['major_raw', 'minor_raw'],
             )
 
-        for sample in aggregated_cn_data:
-            aggregated_cn_data[sample] = sample
-            aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
-            aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
-            aggregated_cn_data[sample]['log_change'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
+        # for sample in aggregated_cn_data:
+        #     aggregated_cn_data[sample] = sample
+        #     aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
+        #     aggregated_cn_data[sample]['total_raw'] = aggregated_cn_data[sample]['major_raw'] + aggregated_cn_data[sample]['minor_raw']
+        #     aggregated_cn_data[sample]['log_change'] = np.log2(aggregated_cn_data[sample]['total_raw'] / aggregated_cn_data[sample]['ploidy'])
 
         print('aggregated_cn_data')
         print(aggregated_cn_data)
