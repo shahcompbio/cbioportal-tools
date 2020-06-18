@@ -76,7 +76,7 @@ def read_gene_data(gtf):
 
 
 def hgnc_lookup(genes, hgnc_file):
-    hgnc = pd.read_csv(file, delimiter='\t', dtype=str)
+    hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     hgnc = hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'NCBI Gene ID': 'Entrez_Gene_Id', 'Ensembl gene ID': 'gene_id'})
     genes = genes.merge(hgnc_file, on=['gene_id'], how='left')
 
