@@ -118,7 +118,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             data['sample'] = sample
             data = data.merge(stats_data[['sample', 'ploidy']])
             data['total_raw'] = data['major_raw'] + data['minor_raw']
-            data['log_change'] = np.log2(data['total_raw'] / data['ploidy'])
+            # data['log_change'] = np.log2(data['total_raw'] / data['ploidy'])
             aggregated_cn_data[sample] = data
 
         print('aggregated_cn_data')
