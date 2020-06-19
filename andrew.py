@@ -199,13 +199,13 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data = amp_data
         gistic_data = hgnc_lookup(gistic_data, hgnc_file)
         for index, row in gistic_data.iterrows():
-            if row['log_change'] < -0.5:
+            if float(row['log_change']) < -0.5:
                 row[row['sample']] = -1
-            elif -0.5 <= row['log_change'] < 0.5:
+            elif -0.5 <= float(row['log_change']) < 0.5:
                 row[row['sample']] = 0
-            elif 0.5 <= row['log_change'] < 1:
+            elif 0.5 <= float(row['log_change']) < 1:
                 row[row['sample']] = 1
-            elif row['log_change'] >= 1:
+            elif float(row['log_change']) >= 1:
                 row[row['sample']] = 2
             else:
                 print('log_change value is :' + row['log_change'])
