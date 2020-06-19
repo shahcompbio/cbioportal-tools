@@ -202,7 +202,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data = hgnc_lookup(gistic_data, hgnc_file)
         for index, row in gistic_data.iterrows():
             print(row['log_change'])
-            print(type(rpw['log_change']))
+            print(type(row['log_change']))
             print(row)
             if float(row['log_change']) < -0.5:
                 row[row['sample']] = -1
