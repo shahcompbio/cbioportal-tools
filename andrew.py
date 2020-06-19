@@ -199,6 +199,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data = amp_data
         gistic_data = hgnc_lookup(gistic_data, hgnc_file)
         for index, row in gistic_data.iterrows():
+            print(row['log_change'])
             if float(row['log_change']) < -0.5:
                 row[row['sample']] = -1
             elif -0.5 <= float(row['log_change']) < 0.5:
@@ -211,6 +212,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 print('log_change value is :' + row['log_change'])
             row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
             print(row)
+            
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
