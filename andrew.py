@@ -167,6 +167,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data = amp_data.merge(genes[gene_cols])
         amp_data = amp_data.merge(stats_data[['sample', 'ploidy']])
         amp_data['log_change'] = np.log2(amp_data['total_raw_mean'] / amp_data['ploidy'])
+        amp_data['log_change'] = amp_data['log_change'].fillna(np.exp(-8))
+        amp_data['log_change'].loc[amp_data['log_change'] == np.NINF, 'log_change'] = np.exp(-8)
 
         # print('amp_data')
         # print(amp_data.head())
@@ -215,6 +217,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             else:
                 print('log_change value is :' + row['log_change'])
             row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
+        gistic_data.loc[gistic_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name']] == hdel_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name']], 'log_change'] = -2
 
         
         # clean up segs and write to disk
