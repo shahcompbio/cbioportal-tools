@@ -170,6 +170,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data['log_change'] = amp_data['log_change'].fillna(np.exp(-8))
         amp_data.loc[amp_data['log_change'] == np.NINF, 'log_change'] = np.exp(-8)
 
+        amp_data = amp_data[['gene_id', 'sample', 'log_change']]
+
         # print('amp_data')
         print(amp_data.head())
 
@@ -194,6 +196,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
             'gene_name',
         ]
         hdel_data = hdel_data.merge(genes[gene_cols])
+
+        hdel_data = hdel_data[['gene_id', 'sample']]
         
         # print('hdel_data')
         print(hdel_data)
