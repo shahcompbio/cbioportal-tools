@@ -301,9 +301,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 else:
                     raise ValueError(f'unrecognized data type {sample_data["datatype"]}')
 
-        vcf_outputs = {sample: os.path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
-        csv_outputs = {sample: os.path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
-        maf_outputs = {sample: os.path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
+        vcf_outputs = {sample: path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
+        csv_outputs = {sample: path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
+        maf_outputs = {sample: path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
 
         vep_dir = '/vcf2maf/cache/'
 
