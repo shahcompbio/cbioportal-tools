@@ -205,9 +205,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
         for index, row in gistic_data.iterrows():
             gistic_data['value'] = 0
         
+        # sort columns
         gistic_data.loc[
-            gistic_data[['gene_id', 'sample']].sort_index() 
-            == hdel_data[['gene_id', 'sample']].sort_index(),
+            gistic_data[['gene_id', 'sample']].sort_index(axis=1) 
+            == hdel_data[['gene_id', 'sample']].sort_index(axis=1),
             'value'] = -2
 
         print('this shit did not break lmao')
