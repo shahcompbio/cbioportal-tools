@@ -171,7 +171,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data.loc[amp_data['log_change'] == np.NINF, 'log_change'] = np.exp(-8)
 
         # print('amp_data')
-        # print(amp_data.head())
+        print(amp_data.head())
 
 
         hdel_data = []
@@ -196,7 +196,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hdel_data = hdel_data.merge(genes[gene_cols])
         
         # print('hdel_data')
-        # print(hdel_data)
+        print(hdel_data)
 
         
         # gistic gene
@@ -206,11 +206,12 @@ def main(input_yaml, path_to_output_study, temp_dir):
             gistic_data['value'] = 0
         
         gistic_data.loc[
-            gistic_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name', 'sample']].sort_index() 
-            == hdel_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name', 'sample']].sort_index(),
+            gistic_data[['gene_id', 'sample']].sort_index() 
+            == hdel_data[['gene_id', 'sample']].sort_index(),
             'value'] = -2
 
         print('this shit did not break lmao')
+        print(gistic_data)
 
         for index, row in gistic_data.iterrows():
             # print(row['log_change'])
@@ -226,12 +227,13 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 row['value'] = 2
             else:
                 print('log_change value is :' + row['log_change'])
-            row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
        
 
         # df.drop(['column_nameA', 'column_nameB'], axis=1, inplace=True) (pasted for later use)
         # dp this at the end to minimize conflicts
         gistic_data = hgnc_lookup(gistic_data, hgnc_file)
+        gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'value']]
+        print(gistic_data)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
