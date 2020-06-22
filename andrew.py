@@ -210,18 +210,20 @@ def main(input_yaml, path_to_output_study, temp_dir):
             == hdel_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name', 'sample']].sort_index(),
             'value'] = -2
 
+        print('this shit did not break lmao')
+
         for index, row in gistic_data.iterrows():
             # print(row['log_change'])
             # print(type(row['log_change']))
             # print(row)
             if float(row['log_change']) < -0.5:
-                row[row['sample']] = -1
+                row['value'] = -1
             elif -0.5 <= float(row['log_change']) < 0.5:
-                row[row['sample']] = 0
+                row['value'] = 0
             elif 0.5 <= float(row['log_change']) < 1:
-                row[row['sample']] = 1
+                row['value'] = 1
             elif float(row['log_change']) >= 1:
-                row[row['sample']] = 2
+                row['value'] = 2
             else:
                 print('log_change value is :' + row['log_change'])
             row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
