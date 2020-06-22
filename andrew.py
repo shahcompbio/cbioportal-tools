@@ -194,18 +194,26 @@ def main(input_yaml, path_to_output_study, temp_dir):
             'gene_name',
         ]
         hdel_data = hdel_data.merge(genes[gene_cols])
-
+        
         # print('hdel_data')
         # print(hdel_data)
 
         
         # gistic gene
         gistic_data = amp_data
-        gistic_data = hgnc_lookup(gistic_data, hgnc_file)
+        
         for index, row in gistic_data.iterrows():
-            print(row['log_change'])
-            print(type(row['log_change']))
-            print(row)
+            gistic_data['value'] = 0
+        
+        gistic_data.loc[
+            gistic_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name', 'sample']].sort_index() 
+            == hdel_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name', 'sample']].sort_index(),
+            'value'] = -2
+
+        for index, row in gistic_data.iterrows():
+            # print(row['log_change'])
+            # print(type(row['log_change']))
+            # print(row)
             if float(row['log_change']) < -0.5:
                 row[row['sample']] = -1
             elif -0.5 <= float(row['log_change']) < 0.5:
@@ -217,9 +225,12 @@ def main(input_yaml, path_to_output_study, temp_dir):
             else:
                 print('log_change value is :' + row['log_change'])
             row = row[['Hugo_Symbol', 'Entrez_Gene_Id', row['sample']]]
-        gistic_data.loc[gistic_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name']] == hdel_data[['gene_id', 'chromosome', 'gene_start', 'gene_end', 'gene_name']], 'log_change'] = -2
+       
 
-        
+        # df.drop(['column_nameA', 'column_nameB'], axis=1, inplace=True) (pasted for later use)
+        # dp this at the end to minimize conflicts
+        gistic_data = hgnc_lookup(gistic_data, hgnc_file)
+
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
             aggregated_cn_data[sample]['sample'] = sample
