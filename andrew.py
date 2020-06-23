@@ -220,7 +220,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         # gistic_data = hgnc_lookup(gistic_data, hgnc_file)
         gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
-        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])
+        gistic_matrix = gistic_data.set_index(['sample', 'Hugo_Symbol'])
         print(gistic_matrix)
         index = pd.MultiIndex.from_frame(gistic_data[['Hugo_Symbol', 'sample']])
         gistic_matrix = pd.DataFrame(gistic_matrix['gistic_value'], index=index)
