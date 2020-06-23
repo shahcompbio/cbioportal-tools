@@ -210,10 +210,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             gistic_data['value'] = 0
         
         # sort columns
-        gistic_data.loc[
-            gistic_data[['gene_id', 'sample']].sort_index(axis=1) 
-            == hdel_data[['gene_id', 'sample']].sort_index(axis=1),
-            'value'] = -2
+        gistic_data['value'] = np.where((gistic_data['gene_id'] == hdel_data['gene_id']) & (gistic_data['sample'] == hdel_data['sample']), -2, gistic_data['value'])
 
         print('this shit did not break lmao')
         print(gistic_data)
