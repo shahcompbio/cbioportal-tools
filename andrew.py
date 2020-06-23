@@ -222,8 +222,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])
         print(gistic_matrix)
+        index = pd.MultiIndex.from_frame(gistic_data[['Hugo_Symbol', 'sample']])
+        gistic_matrix = pd.DataFrame(gistic_matrix['gistic_value'], index=index)
+        print(gistic_matrix)
         gistic_matrix = gistic_matrix.unstack(level=-1)
-        
         print(gistic_matrix)
 
         # clean up segs and write to disk
