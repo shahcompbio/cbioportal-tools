@@ -206,36 +206,20 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # gistic gene
         gistic_data = amp_data
         
-        for index, row in gistic_data.iterrows():
-            gistic_data['value'] = 0
+        # Classify by log change
+        gistic_data['gistic_value'] = 2
+        gistic_data.loc[gistic_data['log_change'] < 1, 'gistic_value'] = 1
+        gistic_data.loc[gistic_data['log_change'] < 0.5, 'gistic_value'] = 0
+        gistic_data.loc[gistic_data['log_change'] < -0.5, 'gistic_value'] = -1
         
-        # sort columns
-        gistic_data['value'] = np.where((gistic_data['gene_id'] == hdel_data['gene_id']) & (gistic_data['sample'] == hdel_data['sample']), -2, gistic_data['value'])
-
-        print('this shit did not break lmao')
-        print(gistic_data)
-
-        for index, row in gistic_data.iterrows():
-            # print(row['log_change'])
-            # print(type(row['log_change']))
-            # print(row)
-            if float(row['log_change']) < -0.5:
-                row['value'] = -1
-            elif -0.5 <= float(row['log_change']) < 0.5:
-                row['value'] = 0
-            elif 0.5 <= float(row['log_change']) < 1:
-                row['value'] = 1
-            elif float(row['log_change']) >= 1:
-                row['value'] = 2
-            else:
-                print('log_change value is :' + row['log_change'])
-       
-
-        # df.drop(['column_nameA', 'column_nameB'], axis=1, inplace=True) (pasted for later use)
-        # dp this at the end to minimize conflicts
-        gistic_data = hgnc_lookup(gistic_data, hgnc_file)
-        gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'value']]
-        print(gistic_data)
+        # Merge hdels
+        hdel_data['is_hdel'] = 1
+        gistic_data = gistic_data.merge(hdel_data[['gene_id', 'sample', 'is_hdel']], how='left')
+        gistic_data['is_hdel'] = gistic_data['is_hdel'].fillna(0).astype(int)
+        gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
+        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()        
+        
+        print(gistic_matrix)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
