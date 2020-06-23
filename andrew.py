@@ -219,7 +219,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
         gistic_data = hgnc_lookup(gistic_data, hgnc_file)
-        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()        
+        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
+        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value']        
         
         print(gistic_matrix)
 
