@@ -173,7 +173,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data = amp_data[['gene_id', 'gene_name', 'sample', 'log_change']]
 
         # print('amp_data')
-        print(amp_data.head())
+        # print(amp_data.head())
 
 
         hdel_data = []
@@ -200,7 +200,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hdel_data = hdel_data[['gene_id', 'sample']]
         
         # print('hdel_data')
-        print(hdel_data)
+        # print(hdel_data)
 
         
         # gistic gene
