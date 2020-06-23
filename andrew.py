@@ -227,6 +227,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         print(gistic_matrix)
         gistic_matrix = gistic_matrix.unstack(level=-1)
         print(gistic_matrix)
+        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'], 'gistic_value')
+        print(gistic_matrix)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
