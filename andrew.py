@@ -222,7 +222,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
         gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
-        gistic_matrix[gistic_matrix.duplicated(['Hugo_Sumbol', 'sample'])].head()
         from IPython import embed; embed(); raise
 
         # clean up segs and write to disk
