@@ -219,9 +219,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
         # gistic_data = hgnc_lookup(gistic_data, hgnc_file)
-        gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
+        # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
-        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
+        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
         from IPython import embed; embed(); raise
 
         # clean up segs and write to disk
