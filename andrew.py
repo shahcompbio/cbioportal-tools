@@ -36,9 +36,13 @@ def read_gene_data(gtf):
 
 def hgnc_lookup(genes, hgnc_file):
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
-    hgnc = hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'NCBI Gene ID': 'Entrez_Gene_Id', 'Ensembl gene ID': 'gene_id'})
+    
+    hgnc.dropna(subset=['Ensembl gene ID', 'Ensembl ID(supplied by Ensembl)'], how='all', inplace=True)
+    hgnc.loc[hgnc['Ensembl gene ID'].isna(), 'Ensembl gene ID'] = hgnc['Ensembl ID(supplied by Ensembl)']
+    hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
+    
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    genes = genes.fillna('')
+    genes.fillna(value='', inplace=True)
 
     return genes
 
