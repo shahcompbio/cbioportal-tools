@@ -44,7 +44,20 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    # genes.fillna(value='', inplace=True)
+    genes.dropna(subset=['Hugo_Symbol'], inplace=True)
+    genes['Entrez_Gene_Id'] = np.nan
+    
+    for index, row in gistic_data.iterrows(): 
+        hugo_request = requests.get('https://www.cbioportal.org/api/genes/' + row['Hugo_Symbol'])
+        name_request = requests.get('https://www.cbioportal.org/api/genes/' + row['gene_name'])
+        
+        if 'entrezGeneId' in hugo_request.json():
+            genes.loc[genes['Hugo_Symbol'] == row['Hugo_Symbol'], 'Entrez_Gene_Id'] = hugo_request.json()['entrezGeneId']
+        elif 'entrezGeneId' in name_request.json():
+            genes.loc[genes['Hugo_Symbol'] == row['Hugo_Symbol'], 'Entrez_Gene_Id'] = name_request.json()['entrezGeneId']
+        else:
+            genes.loc[genes['Hugo_Symbol'] == row['Hugo_Symbol'], 'Entrez_Gene_Id'] = ''
+
 
     return genes
 
