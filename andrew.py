@@ -1,6 +1,7 @@
 import click
 import numpy as np
 import pandas as pd
+import requests
 import wgs_analysis.algorithms.cnv
 import yaml
 
@@ -39,10 +40,11 @@ def hgnc_lookup(genes, hgnc_file):
     
     hgnc.dropna(subset=['Ensembl gene ID', 'Ensembl ID(supplied by Ensembl)'], how='all', inplace=True)
     hgnc.loc[hgnc['Ensembl gene ID'].isna(), 'Ensembl gene ID'] = hgnc['Ensembl ID(supplied by Ensembl)']
+    hgnc.drop('Ensembl ID(supplied by Ensembl)', axis=1, inplace=True)
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
-    
+
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    genes.fillna(value='', inplace=True)
+    # genes.fillna(value='', inplace=True)
 
     return genes
 
