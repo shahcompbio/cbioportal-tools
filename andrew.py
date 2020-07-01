@@ -35,12 +35,12 @@ def read_gene_data(gtf):
     return data
 
 
-def determine_entrez(column):
+def determine_entrez(column_value):
     genes_page_0 = requests.get('https://www.cbioportal.org/api/genes?pageSize=100000')
     genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1&pageSize=100000')
-    genes = genes_page_0 + genes_page_1
+    genes = genes_page_0.json() + genes_page_1.json()
     
-    if (gene['hugoGeneSymbol'] == column for gene in genes):
+    if (gene['hugoGeneSymbol'] == column_value for gene in genes):
         return r.json()['entrezGeneId']
     else:
         return ''
@@ -221,7 +221,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # print(hdel_data)
 
         
-        # gistic gene
+        # Gistic gene
         gistic_data = amp_data
         
         # Classify by log change
@@ -236,7 +236,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data['is_hdel'] = gistic_data['is_hdel'].fillna(0).astype(int)
         gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
-        # gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
+        # Testing
+        gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
         # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
