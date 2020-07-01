@@ -41,7 +41,7 @@ def determine_entrez(column_value):
     genes = genes_page_0.json() + genes_page_1.json()
     
     if (gene['hugoGeneSymbol'] == column_value for gene in genes):
-        return r.json()['entrezGeneId']
+        return gene['entrezGeneId']
     else:
         return ''
 
