@@ -47,7 +47,12 @@ def hgnc_lookup(genes, hgnc_file):
     genes_page_0 = requests.get('https://www.cbioportal.org/api/genes')
     genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1')
     gene_request = genes_page_0.json() + genes_page_1.json()
-    gene_request = [gene for gene in gene_request if gene['entrezGeneId'] > 0]
+    # gene_request = [gene for gene in gene_request if gene['entrezGeneId'] > 0]
+
+    cbio_genes = pd.DataFrame(gene_request)
+    cbio_genes.drop('type', axis=1, inplace=True)
+    cbio_genes.rename(columns={'hugoGeneSymbol': 'Hugo_Symbol', 'entrezGeneId': 'Entrez_Gene_Id'}, inplace=True)
+    cbio_genes['Hugo_Symbol'] = cbio_genes['Hugo_Symbol'].str.lower()
 
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     
@@ -58,7 +63,10 @@ def hgnc_lookup(genes, hgnc_file):
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez, args=(gene_request,))
+    genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.lower()
+    
+    # genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez, args=(gene_request,))
+    genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
 
     return genes
 
