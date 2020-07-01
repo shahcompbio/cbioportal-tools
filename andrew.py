@@ -54,7 +54,6 @@ def hgnc_lookup(genes, hgnc_file):
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    genes['Entrez_Gene_Id'] = genes['gene_name'].apply(determine_entrez)
     genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez)
 
     return genes
