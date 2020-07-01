@@ -37,15 +37,15 @@ def read_gene_data(gtf):
 
 def determine_entrez(column_value, genes):
     for gene in genes:
-        if gene['hugoGeneSymbol'] == column_value:
+        if gene['hugoGeneSymbol'].lower() == column_value.lower():
             return gene['entrezGeneId']
     
     return ''
 
 
 def hgnc_lookup(genes, hgnc_file):
-    genes_page_0 = requests.get('https://www.cbioportal.org/api/genes?pageSize=100000')
-    genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1&pageSize=100000')
+    genes_page_0 = requests.get('https://www.cbioportal.org/api/genes')
+    genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1')
     gene_request = genes_page_0.json() + genes_page_1.json()
     gene_request = [gene for gene in gene_request if gene['entrezGeneId'] > 0]
 
