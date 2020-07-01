@@ -39,8 +39,8 @@ def determine_entrez(column_value, genes):
     for gene in genes:
         if gene['hugoGeneSymbol'] == column_value:
             return gene['entrezGeneId']
-        else:
-            return ''
+    
+    return ''
 
 
 def hgnc_lookup(genes, hgnc_file):
