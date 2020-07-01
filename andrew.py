@@ -47,6 +47,7 @@ def hgnc_lookup(genes, hgnc_file):
     genes_page_0 = requests.get('https://www.cbioportal.org/api/genes?pageSize=100000')
     genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1&pageSize=100000')
     gene_request = genes_page_0.json() + genes_page_1.json()
+    gene_request = [gene for gene in gene_request if gene['entrezGeneId'] > 0]
 
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     
