@@ -52,7 +52,7 @@ def hgnc_lookup(genes, hgnc_file):
     cbio_genes = pd.DataFrame(gene_request, dtype=str)
     cbio_genes.drop('type', axis=1, inplace=True)
     cbio_genes.rename(columns={'hugoGeneSymbol': 'Hugo_Symbol', 'entrezGeneId': 'Entrez_Gene_Id'}, inplace=True)
-    cbio_genes['Hugo_Symbol'] = cbio_genes['Hugo_Symbol'].str.lower()
+    cbio_genes['Hugo_Symbol'] = cbio_genes['Hugo_Symbol'].str.upper()
 
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     
@@ -63,10 +63,10 @@ def hgnc_lookup(genes, hgnc_file):
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    # genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.lower()
+    genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.upper()
     
     # genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez, args=(gene_request,))
-    genes = genes.merge(cbio_genes, on=['Hugo_Symbol'].str.lower(), how='left')
+    genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     # genes['Entrez_Gene_Id'].fillna('')
 
     return genes
