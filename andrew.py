@@ -35,18 +35,19 @@ def read_gene_data(gtf):
     return data
 
 
-def determine_entrez(column_value):
-    genes_page_0 = requests.get('https://www.cbioportal.org/api/genes?pageSize=100000')
-    genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1&pageSize=100000')
-    genes = genes_page_0.json() + genes_page_1.json()
-    
-    if (gene['hugoGeneSymbol'] == column_value for gene in genes):
-        return gene['entrezGeneId']
-    else:
-        return ''
+def determine_entrez(column_value, genes):
+    for gene in genes:
+        if gene['hugoGeneSymbol'] == column_value:
+            return gene['entrezGeneId']
+        else:
+            return ''
 
 
 def hgnc_lookup(genes, hgnc_file):
+    genes_page_0 = requests.get('https://www.cbioportal.org/api/genes?pageSize=100000')
+    genes_page_1 = requests.get('https://www.cbioportal.org/api/genes?pageNumber=1&pageSize=100000')
+    gene_request = genes_page_0.json() + genes_page_1.json()
+
     hgnc = pd.read_csv(hgnc_file, delimiter='\t', dtype=str)
     
     hgnc.dropna(subset=['Ensembl gene ID', 'Ensembl ID(supplied by Ensembl)'], how='all', inplace=True)
@@ -56,7 +57,7 @@ def hgnc_lookup(genes, hgnc_file):
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez)
+    genes['Entrez_Gene_Id'] = genes['Hugo_Symbol'].apply(determine_entrez, args=(gene_request,))
 
     return genes
 
