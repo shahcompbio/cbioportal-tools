@@ -35,7 +35,7 @@ def read_gene_data(gtf):
     return data
 
 
-def determine_entrez(column)
+def determine_entrez(column):
     r = requests.get('https://www.cbioportal.org/api/genes/' + column)
     
     if 'entrezGeneId' in r.json():
