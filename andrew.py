@@ -52,9 +52,17 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.drop('Ensembl ID(supplied by Ensembl)', axis=1, inplace=True)
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
-    # testing
+    # hugo_not_in_cbio
     hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
-    genes = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+    hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+    hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
+    hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
+    hugo_not_in_cbio.to_csv('hugo_not_in_cbio', index=None, sep='\t')
+
+    # hugo_not_in_gtf
+    hugo_not_in_gtf = genes.merge(hgnc, on=['gene_id'], how='right')
+    hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
+    print(hugo_not_in_gtf.head())
 
     # genes = genes.merge(hgnc, on=['gene_id'], how='left')
     # genes.dropna(subset=['Hugo_Symbol'], inplace=True)
