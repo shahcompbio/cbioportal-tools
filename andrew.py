@@ -52,7 +52,11 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.drop('Ensembl ID(supplied by Ensembl)', axis=1, inplace=True)
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
-    genes = genes.merge(hgnc, on=['gene_id'], how='right')
+    # testing
+    hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
+    genes = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+
+    # genes = genes.merge(hgnc, on=['gene_id'], how='left')
     # genes.dropna(subset=['Hugo_Symbol'], inplace=True)
     # genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.upper()
     
