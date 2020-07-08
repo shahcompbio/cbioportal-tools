@@ -62,7 +62,8 @@ def hgnc_lookup(genes, hgnc_file):
     # cbio_not_in_hugo
     cbio_not_in_hugo = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='right')
     cbio_not_in_hugo = cbio_not_in_hugo[cbio_not_in_hugo['gene_id'].isna()]
-    print(cbio_not_in_hugo.head())
+    cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
+    cbio_not_in_hugo.to_csv('cbio_not_in_hugo', index=None, sep='\t')
 
     # hugo_not_in_gtf
     hugo_not_in_gtf = genes.merge(hgnc, on=['gene_id'], how='right')
