@@ -71,11 +71,11 @@ def hgnc_lookup(genes, hgnc_file):
     hugo_not_in_gtf.drop(['gene_name', 'sample', 'log_change', 'gistic_value', 'is_hdel'], axis=1, inplace=True)
     hugo_not_in_gtf.to_csv('hugo_not_in_gtf', index=None, sep='\t')
 
-    # genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    # genes.dropna(subset=['Hugo_Symbol'], inplace=True)
+    genes = genes.merge(hgnc, on=['gene_id'], how='left')
+    genes.dropna(subset=['Hugo_Symbol'], inplace=True)
     # genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.upper()
     
-    # genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+    genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     # genes['Entrez_Gene_Id'].fillna('', inplace=True)
 
     return genes
