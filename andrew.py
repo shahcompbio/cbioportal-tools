@@ -57,27 +57,31 @@ def hgnc_lookup(genes, hgnc_file):
     hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
     hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
-    hugo_not_in_cbio.to_csv('hugo_not_in_cbio', index=None, sep='\t')
+    hugo_not_in_cbio.to_csv('counts/hugo_not_in_cbio.txt', index=None, sep='\t')
     cbio_counts = hugo_not_in_cbio.groupby(['Locus group', 'Locus type']).size()
     cbio_counts = cbio_counts.reset_index()
     cbio_counts.rename(columns={0: 'Count'}, inplace=True)
-    cbio_counts.to_csv('hugo_not_in_cbio_counts', index=None, sep='\t')
+    cbio_counts.to_csv('counts/hugo_not_in_cbio_counts.txt', index=None, sep='\t')
 
     # cbio_not_in_hugo
     cbio_not_in_hugo = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='right')
     cbio_not_in_hugo = cbio_not_in_hugo[cbio_not_in_hugo['gene_id'].isna()]
     cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
-    cbio_not_in_hugo.to_csv('cbio_not_in_hugo', index=None, sep='\t')
+    cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
+
+    hgnc_gene_name = hgnc.rename(columns={'gene_id': 'gene_name'})
+    genes_on_gene_name = genes.merge(hgnc, on=['gene_name'], how='left')
+    genes.loc[genes['Hugo_Symbol'].isna(), 'Hugo_Symbol'] = genes_on_gene_name['Hugo_Symbol']
 
     # hugo_not_in_gtf
     hugo_not_in_gtf = genes.merge(hgnc, on=['gene_id'], how='right')
     hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
     hugo_not_in_gtf.drop(['gene_name', 'sample', 'log_change', 'gistic_value', 'is_hdel'], axis=1, inplace=True)
-    hugo_not_in_gtf.to_csv('hugo_not_in_gtf', index=None, sep='\t')
+    hugo_not_in_gtf.to_csv('counts/hugo_not_in_gtf.txt', index=None, sep='\t')
     gtf_counts = hugo_not_in_gtf.groupby(['Locus group', 'Locus type']).size()
     gtf_counts = gtf_counts.reset_index()
     gtf_counts.rename(columns={0: 'Count'}, inplace=True)
-    gtf_counts.to_csv('hugo_not_in_gtf_counts', index=None, sep='\t')
+    gtf_counts.to_csv('counts/hugo_not_in_gtf_counts.txt', index=None, sep='\t')
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
@@ -264,6 +268,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # Testing gistic_data generation
         gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
         # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
+        # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']]
         # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
