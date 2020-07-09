@@ -51,9 +51,9 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.loc[hgnc['Ensembl gene ID'].isna(), 'Ensembl gene ID'] = hgnc['Ensembl ID(supplied by Ensembl)']
     hgnc.drop('Ensembl ID(supplied by Ensembl)', axis=1, inplace=True)
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
+    hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
 
     # hugo_not_in_cbio
-    hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
     hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
     hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
@@ -81,10 +81,7 @@ def hgnc_lookup(genes, hgnc_file):
 
     genes = genes.merge(hgnc, on=['gene_id'], how='left')
     genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    # genes['Hugo_Symbol'] = genes['Hugo_Symbol'].str.upper()
-    
     genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
-    # genes['Entrez_Gene_Id'].fillna('', inplace=True)
 
     return genes
 
@@ -264,8 +261,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_data['is_hdel'] = gistic_data['is_hdel'].fillna(0).astype(int)
         gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
-        # Testing
+        # Testing gistic_data generation
         gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
+        # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
         # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
