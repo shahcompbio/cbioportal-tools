@@ -53,6 +53,13 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
     hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
 
+    hgnc_gene_name = hgnc.rename(columns={'gene_id': 'gene_name'})
+    genes_on_gene_name = genes.merge(hgnc_gene_name, on=['gene_name'], how='left')
+    final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
+    final_genes.loc[final_genes['Hugo_Symbol'].isna(), 'Hugo_Symbol'] = genes_on_gene_name['Hugo_Symbol']
+    final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
+    final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
+
     # hugo_not_in_cbio
     hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
@@ -69,12 +76,8 @@ def hgnc_lookup(genes, hgnc_file):
     cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
     cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
 
-    hgnc_gene_name = hgnc.rename(columns={'gene_id': 'gene_name'})
-    genes_on_gene_name = genes.merge(hgnc_gene_name, on=['gene_name'], how='left')
-    genes.loc[genes['Hugo_Symbol'].isna(), 'Hugo_Symbol'] = genes_on_gene_name['Hugo_Symbol']
-
     # hugo_not_in_gtf
-    hugo_not_in_gtf = genes.merge(hgnc, on=['gene_id'], how='right')
+    hugo_not_in_gtf = final_genes[['sample', 'Hugo_Symbol']].merge(hgnc, on=['Hugo_Symbol'], how='right')
     hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
     hugo_not_in_gtf.drop(['gene_name', 'sample', 'log_change', 'gistic_value', 'is_hdel'], axis=1, inplace=True)
     hugo_not_in_gtf.to_csv('counts/hugo_not_in_gtf.txt', index=None, sep='\t')
@@ -82,12 +85,10 @@ def hgnc_lookup(genes, hgnc_file):
     gtf_counts = gtf_counts.reset_index()
     gtf_counts.rename(columns={0: 'Count'}, inplace=True)
     gtf_counts.to_csv('counts/hugo_not_in_gtf_counts.txt', index=None, sep='\t')
+    
+    final_genes = final_genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
 
-    genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    genes.dropna(subset=['Hugo_Symbol'], inplace=True)
-    genes = genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
-
-    return genes
+    return final_genes
 
 
 @click.command()
