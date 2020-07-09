@@ -70,7 +70,7 @@ def hgnc_lookup(genes, hgnc_file):
     cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
 
     hgnc_gene_name = hgnc.rename(columns={'gene_id': 'gene_name'})
-    genes_on_gene_name = genes.merge(hgnc, on=['gene_name'], how='left')
+    genes_on_gene_name = genes.merge(hgnc_gene_name, on=['gene_name'], how='left')
     genes.loc[genes['Hugo_Symbol'].isna(), 'Hugo_Symbol'] = genes_on_gene_name['Hugo_Symbol']
 
     # hugo_not_in_gtf
