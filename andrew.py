@@ -79,7 +79,7 @@ def hgnc_lookup(genes, hgnc_file):
     # hugo_not_in_gtf
     hugo_not_in_gtf = final_genes[['sample', 'Hugo_Symbol']].merge(hgnc, on=['Hugo_Symbol'], how='right')
     hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
-    hugo_not_in_gtf.drop(['gene_name', 'sample', 'log_change', 'gistic_value', 'is_hdel'], axis=1, inplace=True)
+    hugo_not_in_gtf.drop(['sample'], axis=1, inplace=True)
     hugo_not_in_gtf.to_csv('counts/hugo_not_in_gtf.txt', index=None, sep='\t')
     gtf_counts = hugo_not_in_gtf.groupby(['Locus group', 'Locus type']).size()
     gtf_counts = gtf_counts.reset_index()
