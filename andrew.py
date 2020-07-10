@@ -53,7 +53,8 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
     final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    final_genes.loc[(final_genes['Hugo_Symbol'].isna()), 'Hugo_Symbol'] = final_genes['gene_name']
+    # commented out for testing (attempting to remove duplicates at gistic_gene stage)
+    # final_genes.loc[(final_genes['Hugo_Symbol'].isna()), 'Hugo_Symbol'] = final_genes['gene_name']
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
@@ -268,11 +269,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         # Testing gistic_data generation
         gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
-        # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
-        # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']]
-        # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
-        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
-        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
+        # gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'gistic_value']]
+        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
+         # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
         from IPython import embed; embed(); raise
 
         # clean up segs and write to disk
