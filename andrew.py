@@ -87,6 +87,9 @@ def hgnc_lookup(genes, hgnc_file):
     gtf_counts.to_csv('counts/hugo_not_in_gtf_counts.txt', index=None, sep='\t')
     
     final_genes = final_genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+    
+    final_genes.loc[final_genes['gene_id'] == 'ENSG00000133706', 'Hugo_Symbol'] = 'LARS'
+    final_genes.loc[final_genes['gene_id'] == 'ENSG00000237452', 'Hugo_Symbol'] = 'BHMG1'
 
     return final_genes
 
