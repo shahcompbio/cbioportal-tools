@@ -53,12 +53,13 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
     hgnc['Hugo_Symbol'] = hgnc['Hugo_Symbol'].str.upper()
 
-    hgnc_gene_name = hgnc
-    hgnc_gene_name['gene_name'] = hgnc['Hugo_Symbol']
-    genes_on_gene_name = genes.merge(hgnc_gene_name, on=['gene_name'], how='left')
+    # hgnc_gene_name = hgnc
+    # hgnc_gene_name['gene_name'] = hgnc['Hugo_Symbol']
+    # genes_on_gene_name = genes.merge(hgnc_gene_name, on=['gene_name'], how='left')
     final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
+    final_genes['gene_name_comp'] = hgnc['Hugo_Symbol']
     from IPython import embed; embed(); raise
-    final_genes.loc[(final_genes['Hugo_Symbol'].isna()) & (final_genes[['gene_name']] == genes_on_gene_name[['gene_name']]), 'Hugo_Symbol'] = genes_on_gene_name['gene_name']
+    final_genes.loc[(final_genes['Hugo_Symbol'].isna()) & (final_genes['gene_name'] == final_genes['gene_name_comp']), 'Hugo_Symbol'] = final_genes['gene_name']
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
