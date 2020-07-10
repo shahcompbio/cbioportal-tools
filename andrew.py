@@ -53,9 +53,8 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
     final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    final_genes['gene_name_comp'] = hgnc['Hugo_Symbol']
     from IPython import embed; embed(); raise
-    final_genes.loc[(final_genes['Hugo_Symbol'].isna()) & (final_genes['gene_name'] == final_genes['gene_name_comp']), 'Hugo_Symbol'] = final_genes['gene_name']
+    final_genes.loc[(final_genes['Hugo_Symbol'].isna()), 'Hugo_Symbol'] = final_genes['gene_name']
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
