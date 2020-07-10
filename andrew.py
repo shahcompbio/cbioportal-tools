@@ -54,6 +54,7 @@ def hgnc_lookup(genes, hgnc_file):
 
     final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
     final_genes['gene_name_comp'] = hgnc['Hugo_Symbol']
+    from IPython import embed; embed(); raise
     final_genes.loc[(final_genes['Hugo_Symbol'].isna()) & (final_genes['gene_name'] == final_genes['gene_name_comp']), 'Hugo_Symbol'] = final_genes['gene_name']
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
@@ -274,7 +275,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         # gistic_data = gistic_data[['gene_name', 'sample', 'gistic_value']].rename(columns={'gene_name': 'Hugo_Symbol'})
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value'].unstack()
         # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'sample'])['gistic_value']
-        from IPython import embed; embed(); raise
+        # from IPython import embed; embed(); raise
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
