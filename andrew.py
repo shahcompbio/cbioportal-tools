@@ -269,10 +269,11 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         # Testing gistic_data generation
         gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
-        # gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'gistic_value']]
-        # gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
-         # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
-        from IPython import embed; embed(); raise
+        gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'gistic_value']]
+        gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
+        gistic_matrix.reset_index(inplace=True)
+        gistic_matrix.to_csv(path_to_output_study + 'data_CNA.txt', index=None, sep='\t')
+        # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
