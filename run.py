@@ -122,7 +122,7 @@ def generate_mafs(vcf_files, vep_dir, tempdir, maf_outputs, vcf_outputs):
         vcf_input = vcf_outputs[sample]
 
         cmd = [
-            '/opt/local/singularity/3.3.0/bin/singularity', 'run', '--bind', '/juno/work/shah/svatrt/vcf2maf:/vcf2maf', 'docker://docker.io/wgspipeline/vcf2maf:v0.0.1',
+            '/opt/local/singularity/3.3.0/bin/singularity', 'run', '--bind', '/juno/work/shah/users/vatrtwaa/vcf2maf:/vcf2maf', 'docker://docker.io/wgspipeline/vcf2maf:v0.0.1',
             'vcf2maf.pl', '--input-vcf', vcf_input, '--output-maf', maf_output,
             '--vep-path', '/usr/local/bin', '--ref-fasta', ref_fasta,
             '--filter-vcf', filter_vcf, '--vep-data', vep_dir,
