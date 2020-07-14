@@ -16,7 +16,7 @@ def convert(input_file, sample_id, dataset_id, output_dir):
 
     sort_vcf_file(vcf_filename, vcf_filename)
 
-    cmd = (f'/opt/local/singularity/3.3.0/bin/singularity run --bind /juno/work/shah/svatrt/vcf2maf:/vcf2maf \
+    cmd = (f'/opt/local/singularity/3.3.0/bin/singularity run --bind /juno/work/shah/users/vatrtwaa/vcf2maf:/vcf2maf \
             docker://wgspipeline/vcf2maf:v0.0.1 \
             vcf2maf.pl \
             --input-vcf {vcf_filename} \
