@@ -546,9 +546,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         t_file = Path(temp_dir + sample + '_tumour_counts.csv')
                     
                     cnv = hmmcopy.read_copy_data(temp_dir + 'hmmcopy_csv', filter_normal=False)
-                    genes = hmmcopy.read_gene_data(gtf_file)
+                    hmmcopy_genes = hmmcopy.read_gene_data(gtf_file)
                     
-                    overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
+                    overlapping = hmmcopy.calculate_gene_copy(cnv, hmmcopy_genes)
                     hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
 
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
