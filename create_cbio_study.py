@@ -300,7 +300,7 @@ def hgnc_lookup(genes, hgnc_file):
     return final_genes
 
 
-def process_remixt(sample_data):
+def process_remixt(sample, sample_data):
     with pd.HDFStore(sample_data['remixt']) as store:
         stats = store['stats']
         stats = stats[stats['proportion_divergent'] < 0.5]
@@ -512,7 +512,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         vcf_files[sample].append(sample_data['strelka_indel_vcf'])
 
                     if 'remixt' in sample_data:
-                        cn, stats = process_remixt(sample_data)
+                        cn, stats = process_remixt(sample, sample_data)
                         cn_data[sample] = cn
                         stats_data.append(stats)            
 
