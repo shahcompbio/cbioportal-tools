@@ -428,7 +428,7 @@ def generate_hdel(genes_cn_data, genes):
     return hdel_data
 
 
-def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study):
+def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study, hgnc_file):
     # Classify by log change
     gistic_data['gistic_value'] = 2
     gistic_data.loc[gistic_data['log_change'] < 1, 'gistic_value'] = 1
@@ -442,7 +442,7 @@ def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study):
     gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
     # Testing gistic_data generation
-    gistic_data = hgnc_lookup(gistic_data, 'example/test_custom.txt')
+    gistic_data = hgnc_lookup(gistic_data, hgnc_file)
     gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'gistic_value']]
     gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
     gistic_matrix.reset_index(inplace=True)
@@ -565,7 +565,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         amp_data = generate_amp(genes_cn_data, stats_data, genes)
         hdel_data = generate_hdel(genes_cn_data, genes)
 
-        generate_gistic_outputs(amp_data, hdel_data, path_to_output_study)
+        generate_gistic_outputs(amp_data, hdel_data, path_to_output_study, hgnc_file)
         generate_seg_outputs(aggregated_cn_data, temp_dir)
 
         vcf_outputs = {sample: path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
