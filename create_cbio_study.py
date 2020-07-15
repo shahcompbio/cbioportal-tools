@@ -363,7 +363,7 @@ def generate_genes_cn(aggregated_cn_data, genes):
     return genes_cn_data
 
 
-def generate_amp(genes_cn_data, stats_data):
+def generate_amp(genes_cn_data, stats_data, genes):
     amp_data = []
 
     for sample, data in genes_cn_data.items():
@@ -401,7 +401,7 @@ def generate_amp(genes_cn_data, stats_data):
     return amp_data
 
 
-def generate_hdel(genes_cn_data):
+def generate_hdel(genes_cn_data, genes):
     hdel_data = []
 
     for sample, data in genes_cn_data.items():
@@ -562,8 +562,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         aggregated_cn_data = generate_aggregated_cn(cn_data)
         genes_cn_data = generate_genes_cn(aggregated_cn_data, genes)
-        amp_data = generate_amp(genes_cn_data, stats_data)
-        hdel_data = generate_hdel(genes_cn_data)
+        amp_data = generate_amp(genes_cn_data, stats_data, genes)
+        hdel_data = generate_hdel(genes_cn_data, genes)
 
         generate_gistic_outputs(amp_data, hdel_data)
         generate_seg_outputs(aggregated_cn_data)
