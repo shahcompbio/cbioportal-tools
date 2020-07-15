@@ -21,12 +21,11 @@ import requests
 import wgs_analysis.algorithms.cnv
 import yaml
 
-from convert_vcf_to_maf import convert as convert_vcf_to_maf
-from generate_outputs import extract, transform, load
+from convert_vcf_to_maf import get_vcf_data, write_vcf, write_allele_counts, generate_mafs
+from generate_outputs import transform, load
 from merge_outputs import merge_all_data as merge_outputs
 from os import path
 from pathlib import Path
-from run import get_vcf_data, write_vcf, write_allele_counts, generate_mafs
 
 
 def create_study(study_info, path_to_output_study):
@@ -330,12 +329,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 if sample_data['datatype'] == 'WGS':
                     if 'museq_vcf' in sample_data and 'strelka_vcf' in sample_data:
                         museq_filtered = filter_vcfs(sample, sample_data['museq_vcf'], sample_data['strelka_vcf'], temp_dir)
-                        dataset_id = f'{patient_id}-{sample}-snvs'
-                        convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
+                        vcf_files[sample].append(museq_filtered)
                     
                     if 'strelka_indel_vcf' in sample_data:
-                        dataset_id = f'{patient_id}-{sample}-indels'
-                        convert_vcf_to_maf(sample_data['strelka_indel_vcf'], sample, dataset_id, temp_dir)
+                        vcf_files[sample].append(sample_data['strelka_indel_vcf'])
 
                     with pd.HDFStore(sample_data['remixt']) as store:
                         stats = store['stats']
@@ -542,14 +539,12 @@ def main(input_yaml, path_to_output_study, temp_dir):
         csv_outputs = {sample: path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
         maf_outputs = {sample: path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
 
-        vep_dir = '/vcf2maf/cache/'
-
         for sample, sample_vcf_files in vcf_files.items():
             vcfdata = get_vcf_data(sample_vcf_files)
             write_vcf(vcf_outputs[sample], sample_vcf_files, vcfdata, temp_dir, sample)
             write_allele_counts(csv_outputs[sample], vcfdata)
 
-        generate_mafs(vcf_files, vep_dir, temp_dir, maf_outputs, vcf_outputs)
+        generate_mafs(vcf_files, temp_dir, maf_outputs, vcf_outputs)
 
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, _ in patient_data.items():

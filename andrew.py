@@ -53,8 +53,6 @@ def hgnc_lookup(genes, hgnc_file):
     hgnc.rename(columns={'Approved symbol': 'Hugo_Symbol', 'Ensembl gene ID': 'gene_id'}, inplace=True)
 
     final_genes = genes.merge(hgnc, on=['gene_id'], how='left')
-    # commented out for testing (attempting to remove duplicates at gistic_gene stage)
-    # final_genes.loc[(final_genes['Hugo_Symbol'].isna()), 'Hugo_Symbol'] = final_genes['gene_name']
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
@@ -86,6 +84,7 @@ def hgnc_lookup(genes, hgnc_file):
     
     final_genes = final_genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     
+    # manual additions as per request
     final_genes.loc[final_genes['gene_id'] == 'ENSG00000133706', 'Hugo_Symbol'] = 'LARS'
     final_genes.loc[final_genes['gene_id'] == 'ENSG00000237452', 'Hugo_Symbol'] = 'BHMG1'
 
@@ -183,9 +182,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     'minor_2',
                 ])
 
-        # print('genes_cn_data')
-        # print(genes_cn_data)
-
         
         amp_data = []
 
@@ -221,9 +217,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
         amp_data = amp_data[['gene_id', 'gene_name', 'sample', 'log_change']]
 
-        # print('amp_data')
-        # print(amp_data.head())
-
 
         hdel_data = []
 
@@ -247,9 +240,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hdel_data = hdel_data.merge(genes[gene_cols])
 
         hdel_data = hdel_data[['gene_id', 'sample']]
-        
-        # print('hdel_data')
-        # print(hdel_data)
 
         
         # Gistic gene
@@ -273,7 +263,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
         gistic_matrix.reset_index(inplace=True)
         gistic_matrix.to_csv(path_to_output_study + 'data_CNA.txt', index=None, sep='\t')
-        # gistic_data['Entrez_Gene_Id'].fillna('', inplace=True)
 
         # clean up segs and write to disk
         for sample in aggregated_cn_data:
@@ -287,9 +276,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
             aggregated_cn_data[sample]['seg.mean'] = aggregated_cn_data[sample]['seg.mean'].fillna(np.exp(-8))
             aggregated_cn_data[sample].loc[aggregated_cn_data[sample]['seg.mean'] == np.NINF, 'seg.mean'] = np.exp(-8)
             aggregated_cn_data[sample].to_csv(temp_dir + sample + '_log_seg_data.seg', index=None, sep='\t')
-
-        # print('aggregated_cn_data')
-        # print(aggregated_cn_data)
 
     
     merge_outputs(temp_dir, path_to_output_study)
