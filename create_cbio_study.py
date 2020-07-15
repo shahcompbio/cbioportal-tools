@@ -449,7 +449,7 @@ def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study, hgnc_f
     gistic_matrix.to_csv(path_to_output_study + 'data_CNA.txt', index=None, sep='\t')
 
 
-def generate_seg_outputs(aggregated_cn_data, temp_dir):
+def generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data):
     # clean up segs and write to disk
     for sample in aggregated_cn_data:
         aggregated_cn_data[sample]['sample'] = sample
@@ -566,7 +566,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hdel_data = generate_hdel(genes_cn_data, genes)
 
         generate_gistic_outputs(amp_data, hdel_data, path_to_output_study, hgnc_file)
-        generate_seg_outputs(aggregated_cn_data, temp_dir)
+        generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data)
 
         vcf_outputs = {sample: path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
         csv_outputs = {sample: path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
