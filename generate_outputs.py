@@ -5,15 +5,6 @@ import logging
 from scipy.stats import norm
 
 
-def test_gene_weighted_average():
-    gene_weighted_average(gene_start, gene_end, seg_starts, [1000, 2000], [1, 2, 3])    
-
-
-def gene_weighted_average(gene_start, gene_end, seg_starts, seg_ends, seg_values):
-    """ For a single gene, calculate weighted average from overlapping segments
-    """
-
-
 def calculate_weighted_average(ensembl_dict, column_to_use):
     calculated_values = {}
     for ensembl_id in ensembl_dict:

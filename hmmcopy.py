@@ -99,19 +99,6 @@ def calculate_gene_copy(cnv, genes):
     return data
 
 
-def test_calculate_gene_copy():
-    # Create some cnv data
-    cnv = pd.DataFrame([{'chr': 'Y', 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0}])
-
-    # Create some gene data
-    genes = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825}])
-
-    # Create known overlap
-    overlapping = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825, 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0, }])
-
-    assert overlapping.equals(calculate_gene_copy(cnv, genes))
-
-
 def read_copy_data(bins_filename, filter_normal=False):
     """ Read hmmcopy data, filter normal cells and aggregate into segments
     """
@@ -222,10 +209,23 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
 
-# Testing
-def main():
-    test_calculate_gene_copy()
+def merge_csv(hmmcopy_files, temp_dir):
+    final_df = pd.read_csv(hmmcopy_files.pop(0), dtype=object)
+    
+    for file in hmmcopy_files:
+        df = pd.read_csv(file, dtype=object)
+        final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+    
+    final_df.to_csv(temp_dir + 'hmmcopy_csv', index=None)
 
 
-if __name__ == '__main__':
-    main()
+def calculate_counts(counts_files, sample_id, temp_dir):
+    usecols = ['chrom','coord','ref','alt', 'ref_counts', 'alt_counts']
+    final_df = pd.DataFrame(columns=usecols)
+    for counts_file in counts_files:
+        for df in pd.read_csv(counts_file, chunksize=1e6, usecols=usecols):
+            final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+            final_df = final_df.groupby(['chrom','coord','ref','alt'], as_index=False).agg('sum')
+
+    final_df = final_df.rename(columns={'ref_counts': 't_ref_count', 'alt_counts': 't_alt_count'})
+    final_df.to_csv(temp_dir + sample_id + '_tumour_counts.csv', index=None, sep='\t')

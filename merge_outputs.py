@@ -8,7 +8,7 @@ from collections import Counter
 
 # merge multiple gistic OR integer gene data text files
 def merge_gistic_gene_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.txt') if not os.path.basename(fn).startswith('data_CNA')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.txt')]
     
     if not files_to_merge:
         print('No .txt files found. Please add some and rerun.')
@@ -44,7 +44,7 @@ def merge_gistic_gene_data(input_dir, output_dir):
 
 
 def merge_log_seg_data(input_dir, output_dir):
-    files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg') if not os.path.basename(fn).startswith('data_cna_hg19')]
+    files_to_merge = [fn for fn in glob.glob(input_dir + '*.seg')]
     
     if not files_to_merge:
         print('No .seg files found. Please add some and rerun.')
@@ -90,6 +90,7 @@ def merge_maf_data(input_dir, output_dir):
 
 
 def merge_all_data(input_dir, output_dir):
+    merge_gistic_gene_data(input_dir, output_dir)
     merge_log_seg_data(input_dir, output_dir)
     merge_maf_data(input_dir, output_dir)
 
