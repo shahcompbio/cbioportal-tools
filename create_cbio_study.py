@@ -1,6 +1,7 @@
 import click
 import hmmcopy
 import remixt
+import yaml
 
 from convert_vcf_to_maf import generate_mafs, get_vcf_data, write_allele_counts, write_vcf
 from merge_outputs import merge_all_data as merge_outputs
