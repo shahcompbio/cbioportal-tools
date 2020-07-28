@@ -1,15 +1,10 @@
 import os
-
 import vcf
 import yaml
 
 from utils import OpenFile as open
-from utils import run_in_gnu_parallel
 from utils import run_cmd
-
-def load_input_yaml(yamlfile):
-    with open(yamlfile, 'rt') as inputyaml:
-        return yaml.load(inputyaml)
+from utils import run_in_gnu_parallel
 
 
 def get_vcf_header(vcf_files):
@@ -68,6 +63,7 @@ def get_vcf_data(vcf_files, pr_threshold=0.8, qss_threshold=20):
                     output[key] = value
     return output
 
+
 def write_vcf(output, vcf_files, data, tempdir, sample_id):
     temp_output = os.path.join(tempdir, '{}.vcf'.format(sample_id))
 
@@ -85,6 +81,7 @@ def write_vcf(output, vcf_files, data, tempdir, sample_id):
 
     sort_vcf_file(temp_output, output)
 
+
 def write_allele_counts(output, vcf_data):
     with open(output, 'wt') as outfile:
         header = ['chrom', 'coord', 'ref', 'alt', 'n_ref_count', 'n_alt_count']
@@ -94,22 +91,6 @@ def write_allele_counts(output, vcf_data):
             outstr = key + key_data[1]
             outstr = '\t'.join(outstr) + '\n'
             outfile.write(outstr)
-
-
-def get_vcf_files(yamldata):
-    vcf_files = {}
-    for patient, patient_data in yamldata['patients'].items():
-        for sample, sample_data in patient_data.items():
-            if sample_data['datatype'] == 'SCWGS':
-                sample = '{}'.format(sample)
-                vcf_files[sample] = []
-                for library_id, library_data in sample_data.items():
-                    if library_id == 'datatype':
-                        continue
-                    vcf_files[sample].append(library_data['museq_vcf'])
-                    vcf_files[sample].append(library_data['strelka_vcf'])
-                    vcf_files[sample].append(library_data['strelka_indel_vcf'])
-    return vcf_files
 
 
 def generate_mafs(vcf_files, tempdir, maf_outputs, vcf_outputs):
@@ -150,20 +131,3 @@ def main(yamlfile, vcf_outputs, csv_outputs, maf_outputs, tempdir):
         write_allele_counts(csv_outputs[sample], vcfdata)
 
     generate_mafs(vcf_files, tempdir, maf_outputs, vcf_outputs)
-
-
-if __name__ == '__main__':
-    YAMLFILE = 'input.yaml'
-
-    yamldata = load_input_yaml(YAMLFILE)
-    yamldata = get_vcf_files(yamldata)
-
-    VCF_OUTPUTS = {sample: os.path.join('results_new', '{}.vcf'.format(sample)) for sample in yamldata}
-    CSV_OUTPUTS = {sample: os.path.join('results_new', '{}.csv'.format(sample)) for sample in yamldata}
-    MAF_OUTPUTS = {sample: os.path.join('results_new', '{}.maf'.format(sample)) for sample in yamldata}
-
-    TEMPDIR = 'tempdir'
-    VEP_DIR = 'vep'
-
-    main(YAMLFILE, VCF_OUTPUTS, CSV_OUTPUTS, MAF_OUTPUTS, TEMPDIR, VEP_DIR)
-

@@ -1,10 +1,10 @@
+import errno
 import gzip
+import multiprocessing
 import os
 
-import errno
-import multiprocessing
-
 from subprocess import Popen, PIPE
+
 
 class OpenFile(object):
     def __init__(self, filename, mode='rt'):
@@ -32,6 +32,7 @@ class OpenFile(object):
         else:
             return "plain-text"
 
+
 def makedirs(directory, isfile=False):
     if isfile:
         directory = os.path.dirname(directory)
@@ -43,6 +44,7 @@ def makedirs(directory, isfile=False):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
 
 def build_shell_script(command, tag, tempdir):
     outfile = os.path.join(tempdir, "{}.sh".format(tag))
@@ -96,5 +98,4 @@ def run_in_gnu_parallel(commands, tempdir, ncores=None):
     gnu_parallel_cmd = ['parallel', '--jobs', ncores, '<', parallel_outfile]
 
     run_cmd(gnu_parallel_cmd)
-
-
+    
