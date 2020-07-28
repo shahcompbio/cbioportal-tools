@@ -1,17 +1,3 @@
-'''
-for each section in yaml, perform:
-    filtering ✔
-    run cn data output generator ✔
-    conversion to maf ✔
-
-afterwards:
-    merge mafs ✔
-    merge gistic gene results ✔
-    merge log seg data results ✔
-    create cBio stidy meta files/connect to data files properly ✔
-
-'''
-
 import click
 import hmmcopy
 import gzip
@@ -29,14 +15,6 @@ from pathlib import Path
 
 
 def create_study(study_info, path_to_output_study):
-    '''
-    prerequisites:
-    data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
-    (in path_to_output_study)
-
-    Please see cbioportal/docs/File-Formats.md on GitHub for examples
-    '''
-    
     type_of_cancer = study_info['type_of_cancer']
     cancer_study_identifier = study_info['cancer_study_identifier']
     name = study_info['name']
@@ -132,13 +110,13 @@ def create_study(study_info, path_to_output_study):
 
 def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
     '''
-    original code by Diljot Grewal
+    Original code by Diljot Grewal
 
     museq_paired and strekla_snv,
     take position intersection plus probability filter of 0.85
     (keep positions >= 0.85 that are in both)
 
-    modifications: take museq and strelka directly as input, output
+    Modifications: take museq and strelka directly as input, output
     to temp_dir, take sample id as input and append to output
     filtered filename
     '''
@@ -265,7 +243,7 @@ def hgnc_lookup(genes, hgnc_file):
     final_genes['Hugo_Symbol'] = final_genes['Hugo_Symbol'].str.upper()
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
-    # hugo_not_in_cbio
+    # Generate hugo_not_in_cbio info
     hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
     hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
@@ -275,13 +253,13 @@ def hgnc_lookup(genes, hgnc_file):
     cbio_counts.rename(columns={0: 'Count'}, inplace=True)
     cbio_counts.to_csv('counts/hugo_not_in_cbio_counts.txt', index=None, sep='\t')
 
-    # cbio_not_in_hugo
+    # Generate cbio_not_in_hugo info
     cbio_not_in_hugo = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='right')
     cbio_not_in_hugo = cbio_not_in_hugo[cbio_not_in_hugo['gene_id'].isna()]
     cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
     cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
 
-    # hugo_not_in_gtf
+    # Generate hugo_not_in_gtf info
     hugo_not_in_gtf = final_genes[['sample', 'gene_id']].merge(hgnc, on=['gene_id'], how='right')
     hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
     hugo_not_in_gtf.drop(['sample'], axis=1, inplace=True)
@@ -293,7 +271,7 @@ def hgnc_lookup(genes, hgnc_file):
     
     final_genes = final_genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     
-    # manual additions as per request
+    # Manual additions as per request
     final_genes.loc[final_genes['gene_id'] == 'ENSG00000133706', 'Hugo_Symbol'] = 'LARS'
     final_genes.loc[final_genes['gene_id'] == 'ENSG00000237452', 'Hugo_Symbol'] = 'BHMG1'
 
@@ -441,7 +419,7 @@ def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study, hgnc_f
     gistic_data['is_hdel'] = gistic_data['is_hdel'].fillna(0).astype(int)
     gistic_data.loc[gistic_data['is_hdel'] == 1, 'gistic_value'] = -2
 
-    # Testing gistic_data generation
+    # Gistic_data generation
     gistic_data = hgnc_lookup(gistic_data, hgnc_file)
     gistic_data = gistic_data[['Hugo_Symbol', 'Entrez_Gene_Id', 'sample', 'gistic_value']]
     gistic_matrix = gistic_data.set_index(['Hugo_Symbol', 'Entrez_Gene_Id', 'sample'])['gistic_value'].unstack()
@@ -450,7 +428,7 @@ def generate_gistic_outputs(gistic_data, hdel_data, path_to_output_study, hgnc_f
 
 
 def generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data):
-    # clean up segs and write to disk
+    # Clean up segs and write to disk
     for sample in aggregated_cn_data:
         aggregated_cn_data[sample]['sample'] = sample
         aggregated_cn_data[sample] = aggregated_cn_data[sample].merge(stats_data[['sample', 'ploidy']])
