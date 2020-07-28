@@ -2,6 +2,7 @@ import errno
 import gzip
 import multiprocessing
 import os
+import pandas as pd
 
 from subprocess import Popen, PIPE
 
@@ -98,4 +99,70 @@ def run_in_gnu_parallel(commands, tempdir, ncores=None):
     gnu_parallel_cmd = ['parallel', '--jobs', ncores, '<', parallel_outfile]
 
     run_cmd(gnu_parallel_cmd)
+
+
+def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
+    '''
+    Original code by Diljot Grewal
+
+    museq_paired and strekla_snv,
+    take position intersection plus probability filter of 0.85
+    (keep positions >= 0.85 that are in both)
+
+    Modifications: take museq and strelka directly as input, output
+    to temp_dir, take sample id as input and append to output
+    filtered filename
+    '''
+
+    museq_filtered = work_dir + '{}_museq_filtered.vcf.gz'.format(sample_id)
+
+    strelka_ref = set()
+
+    with gzip.open(strelka_vcf, 'rt') as strelka_data:
+        for line in strelka_data:
+            if line.startswith('#'):
+                continue
+
+            line = line.strip().split()
+            
+            chrom = line[0]
+            pos = line[1]
+            
+            strelka_ref.add((chrom, pos))
+
+    with gzip.open(museq_vcf, 'rt') as museq_data, gzip.open(museq_filtered, 'wt') as museqout:
+        for line in museq_data:
+            if line.startswith('#'):
+                museqout.write(line)
+                continue
+            
+            line = line.strip().split()
+            chrom = line[0]
+            pos = line[1]
+            
+            if ((chrom, pos))  not in strelka_ref:
+                continue
+            
+            pr = line[7].split(';')[0].split('=')[1]
+            if float(pr) < 0.85:
+                continue
+            
+            outstr = '\t'.join(line)+'\n'
+            museqout.write(outstr)
+
+    return museq_filtered
+
+
+def add_counts_to_maf(sample_id, temp_dir):
+    n_counts = pd.read_csv(temp_dir + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
     
+    maf = pd.read_csv(temp_dir + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
+    maf = maf.drop(columns=['n_ref_count', 'n_alt_count'])
+    maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
+    
+    if os.path.exists(temp_dir + sample_id + '_tumour_counts.csv'):
+        t_counts = pd.read_csv(temp_dir + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
+        maf = maf.drop(columns=['t_ref_count', 't_alt_count'])
+        maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
+    
+    maf.to_csv(temp_dir + sample_id + '.maf', index=None, sep='\t')
