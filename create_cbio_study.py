@@ -147,7 +147,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                             cn_data[sample] = cn
                             stats_data.append(stats)
                     else:
-                        copyfile(sample['maf'], temp_dir + sample + '.maf')
+                        copyfile(sample_data['maf'], temp_dir + sample + '.maf')
 
                 elif sample_data['datatype'] == 'SCWGS':
                     hmmcopy_list = []
