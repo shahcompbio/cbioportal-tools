@@ -7,6 +7,7 @@ from convert_vcf_to_maf import generate_mafs, get_vcf_data, write_allele_counts,
 from merge_outputs import merge_all_data as merge_outputs
 from os import path
 from pathlib import Path
+from shutil import copyfile
 from utils import add_counts_to_maf, filter_vcfs
 
 
@@ -133,17 +134,20 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 if sample_data['datatype'] == 'WGS':
                     vcf_files[sample] = []
 
-                    if 'museq_vcf' in sample_data and 'strelka_vcf' in sample_data:
-                        museq_filtered = filter_vcfs(sample, sample_data['museq_vcf'], sample_data['strelka_vcf'], temp_dir)
-                        vcf_files[sample].append(museq_filtered)
-                    
-                    if 'strelka_indel_vcf' in sample_data:
-                        vcf_files[sample].append(sample_data['strelka_indel_vcf'])
+                    if 'maf' not in sample_data:
+                        if 'museq_vcf' in sample_data and 'strelka_vcf' in sample_data:
+                            museq_filtered = filter_vcfs(sample, sample_data['museq_vcf'], sample_data['strelka_vcf'], temp_dir)
+                            vcf_files[sample].append(museq_filtered)
+                        
+                        if 'strelka_indel_vcf' in sample_data:
+                            vcf_files[sample].append(sample_data['strelka_indel_vcf'])
 
-                    if 'remixt' in sample_data:
-                        cn, stats = remixt.process_sample(sample, sample_data)
-                        cn_data[sample] = cn
-                        stats_data.append(stats)            
+                        if 'remixt' in sample_data:
+                            cn, stats = remixt.process_sample(sample, sample_data)
+                            cn_data[sample] = cn
+                            stats_data.append(stats)
+                    else:
+                        copyfile(sample['maf'], temp_dir + sample + '.maf')
 
                 elif sample_data['datatype'] == 'SCWGS':
                     hmmcopy_list = []
