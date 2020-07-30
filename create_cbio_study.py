@@ -132,9 +132,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, sample_data in patient_data.items():
                 if sample_data['datatype'] == 'WGS':
-                    vcf_files[sample] = []
-
                     if 'maf' not in sample_data:
+                        vcf_files[sample] = []
+
                         if 'museq_vcf' in sample_data and 'strelka_vcf' in sample_data:
                             museq_filtered = filter_vcfs(sample, sample_data['museq_vcf'], sample_data['strelka_vcf'], temp_dir)
                             vcf_files[sample].append(museq_filtered)

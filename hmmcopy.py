@@ -225,6 +225,7 @@ def merge_csv(hmmcopy_files, temp_dir):
 def calculate_counts(counts_files, sample_id, temp_dir):
     usecols = ['chrom','coord','ref','alt', 'ref_counts', 'alt_counts']
     final_df = pd.DataFrame(columns=usecols)
+    
     for counts_file in counts_files:
         for df in pd.read_csv(counts_file, chunksize=1e6, usecols=usecols):
             final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
