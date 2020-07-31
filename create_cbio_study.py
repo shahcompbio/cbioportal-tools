@@ -1,5 +1,6 @@
 import click
 import hmmcopy
+import pandas as pd
 import remixt
 import yaml
 
