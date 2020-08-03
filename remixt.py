@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import requests
 import wgs_analysis.algorithms.cnv
 
 from utils import hgnc_lookup

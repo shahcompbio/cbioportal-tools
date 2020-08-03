@@ -3,6 +3,7 @@ import gzip
 import multiprocessing
 import os
 import pandas as pd
+import requests
 
 from subprocess import Popen, PIPE
 
