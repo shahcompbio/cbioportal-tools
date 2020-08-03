@@ -189,8 +189,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
                     print(overlapping)
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
-                    gene_dict, seg_dict = hmmcopy.transform(hmmcopy_extract, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
-                    hmmcopy.load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
+                    gene_dict, seg_dict = hmmcopy.transform(hmmcopy_extract)
+                    hmmcopy.load(gene_dict, seg_dict, sample, temp_dir)
 
                 else:
                     raise ValueError(f'unrecognized data type {sample_data["datatype"]}')

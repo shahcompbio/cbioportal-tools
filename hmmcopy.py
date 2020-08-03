@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from scipy.stats import norm
-
+from utils import hgnc_lookup
 
 autosomes = [str(a) for a in range(1, 23)]
 
@@ -98,6 +98,7 @@ def calculate_gene_copy(cnv, genes):
             data.append(overlapping_genes)
 
     data = pd.concat(data, ignore_index=True)
+    import IPython; IPython.embed(); raise
 
     return data
 
@@ -280,7 +281,7 @@ def calculate_weighted_average(ensembl_dict, column_to_use):
     return calculated_values
 
 
-def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missing_both):
+def transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False):
     '''
     perform weighted average calculations, and transformations
     
@@ -386,7 +387,7 @@ def transform(extracted_file, show_missing_hugo, show_missing_entrez, show_missi
     return gene_dict, seg_dict
 
 
-def load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene, output_integer_gene, output_log_seg, output_integer_seg):
+def load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False):
     '''
     split generated file into four outputs
 
