@@ -75,10 +75,7 @@ def merge_maf_data(input_dir, output_dir):
     dfs_to_merge = []
     
     for file in files_to_merge:
-        if ('-indels.maf' in file) or ('-snvs.maf' in file):
-            data_frame = pd.read_csv(file, delimiter='\t', dtype=str, skiprows=1)
-        else:
-            data_frame = pd.read_csv(file, delimiter='\t', dtype=str)
+        data_frame = pd.read_csv(file, delimiter='\t', dtype=str)
         
         dfs_to_merge.append(data_frame)
 
