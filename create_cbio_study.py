@@ -146,6 +146,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     else:
                         copyfile(sample_data['maf'], temp_dir + sample + '.maf')
                         maf = pd.read_csv(temp_dir + sample + '.maf', dtype=str, sep='\t', skiprows=1)
+                        maf['Tumor_Sample_Barcode'] = sample
                         maf.to_csv(temp_dir + sample + '.maf', index=None, sep='\t')
 
                     if 'remixt' in sample_data:
