@@ -98,7 +98,6 @@ def calculate_gene_copy(cnv, genes):
             data.append(overlapping_genes)
 
     data = pd.concat(data, ignore_index=True)
-    import IPython; IPython.embed(); raise
 
     return data
 
@@ -164,27 +163,18 @@ def read_gene_data(gtf):
 
 def convert_to_transform_format(data, hgnc, temp_dir):
     """Hacky way to get data generated
-    """
-    hgnc_file = open(hgnc, 'r')
-    next(hgnc_file)
-    hgnc_reader = csv.reader(hgnc_file, delimiter='\t')
-    hgnc_dict = {}
-    for hgnc_line in hgnc_reader:
-        if len(hgnc_line) == 3:
-            hgnc_dict[hgnc_line[2]] = (hgnc_line[0], hgnc_line[1])
-
-    data['hugo_symbol'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[0])
-    data['entrez_id'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[1])
+    """ 
     data['median_logr'] = np.log2(data['copy'] / 2)
     data['median_logr'] = data['median_logr'].fillna(np.exp(-8))
     data['num.mark'] = (data['width'] / 500000).astype(int)
 
-    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end'})
+    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end', 'Hugo_Symbol': 'hugo_symbol', 'Entrez_Gene_Id': 'entrez_id'})
     data['placeholder'] = 0
     data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
     data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
     data.loc[data['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
 
+    # Fix seg ends to align with cBioPortal specifications
     data.loc[(data['chr'] == '1') & (data['seg_end'] == 249500000), 'seg_end'] = 249250621
     data.loc[(data['chr'] == '2') & (data['seg_end'] == 243500000), 'seg_end'] = 243199373
     data.loc[(data['chr'] == '3') & (data['seg_end'] == 198500000), 'seg_end'] = 198022430

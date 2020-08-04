@@ -187,7 +187,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     overlapping = hmmcopy.calculate_gene_copy(cnv, hmmcopy_genes)
                     hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
 
-                    print(overlapping)
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
                     gene_dict, seg_dict = hmmcopy.transform(hmmcopy_extract)
                     hmmcopy.load(gene_dict, seg_dict, sample, temp_dir)
