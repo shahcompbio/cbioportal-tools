@@ -191,30 +191,33 @@ def hgnc_lookup(genes, hgnc_file, show_hugo_not_in_cbio=False, show_cbio_not_in_
     final_genes.dropna(subset=['Hugo_Symbol'], inplace=True)
 
     # Generate hugo_not_in_cbio info
-    hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
-    hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
-    hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
-    hugo_not_in_cbio.to_csv('counts/hugo_not_in_cbio.txt', index=None, sep='\t')
-    cbio_counts = hugo_not_in_cbio.groupby(['Locus group', 'Locus type']).size()
-    cbio_counts = cbio_counts.reset_index()
-    cbio_counts.rename(columns={0: 'Count'}, inplace=True)
-    cbio_counts.to_csv('counts/hugo_not_in_cbio_counts.txt', index=None, sep='\t')
+    if show_hugo_not_in_cbio:
+        hugo_not_in_cbio = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
+        hugo_not_in_cbio = hugo_not_in_cbio[hugo_not_in_cbio['Entrez_Gene_Id'].isna()]
+        hugo_not_in_cbio.drop('Entrez_Gene_Id', axis=1, inplace=True)
+        hugo_not_in_cbio.to_csv('counts/hugo_not_in_cbio.txt', index=None, sep='\t')
+        cbio_counts = hugo_not_in_cbio.groupby(['Locus group', 'Locus type']).size()
+        cbio_counts = cbio_counts.reset_index()
+        cbio_counts.rename(columns={0: 'Count'}, inplace=True)
+        cbio_counts.to_csv('counts/hugo_not_in_cbio_counts.txt', index=None, sep='\t')
 
     # Generate cbio_not_in_hugo info
-    cbio_not_in_hugo = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='right')
-    cbio_not_in_hugo = cbio_not_in_hugo[cbio_not_in_hugo['gene_id'].isna()]
-    cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
-    cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
+    if show_cbio_not_in_hugo:
+        cbio_not_in_hugo = hgnc.merge(cbio_genes, on=['Hugo_Symbol'], how='right')
+        cbio_not_in_hugo = cbio_not_in_hugo[cbio_not_in_hugo['gene_id'].isna()]
+        cbio_not_in_hugo = cbio_not_in_hugo[['Hugo_Symbol', 'Entrez_Gene_Id']]
+        cbio_not_in_hugo.to_csv('counts/cbio_not_in_hugo.txt', index=None, sep='\t')
 
     # Generate hugo_not_in_gtf info
-    hugo_not_in_gtf = final_genes[['sample', 'gene_id']].merge(hgnc, on=['gene_id'], how='right')
-    hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
-    hugo_not_in_gtf.drop(['sample'], axis=1, inplace=True)
-    hugo_not_in_gtf.to_csv('counts/hugo_not_in_gtf.txt', index=None, sep='\t')
-    gtf_counts = hugo_not_in_gtf.groupby(['Locus group', 'Locus type']).size()
-    gtf_counts = gtf_counts.reset_index()
-    gtf_counts.rename(columns={0: 'Count'}, inplace=True)
-    gtf_counts.to_csv('counts/hugo_not_in_gtf_counts.txt', index=None, sep='\t')
+    if show_hugo_not_in_gtf:
+        hugo_not_in_gtf = final_genes[['sample', 'gene_id']].merge(hgnc, on=['gene_id'], how='right')
+        hugo_not_in_gtf = hugo_not_in_gtf[hugo_not_in_gtf['sample'].isna()]
+        hugo_not_in_gtf.drop(['sample'], axis=1, inplace=True)
+        hugo_not_in_gtf.to_csv('counts/hugo_not_in_gtf.txt', index=None, sep='\t')
+        gtf_counts = hugo_not_in_gtf.groupby(['Locus group', 'Locus type']).size()
+        gtf_counts = gtf_counts.reset_index()
+        gtf_counts.rename(columns={0: 'Count'}, inplace=True)
+        gtf_counts.to_csv('counts/hugo_not_in_gtf_counts.txt', index=None, sep='\t')
     
     final_genes = final_genes.merge(cbio_genes, on=['Hugo_Symbol'], how='left')
     
