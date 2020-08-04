@@ -1,39 +1,18 @@
-'''
-for each section in yaml, perform:
-    filtering ✔
-    run cn data output generator ✔
-    conversion to maf ✔
-
-afterwards:
-    merge mafs ✔
-    merge gistic gene results ✔
-    merge log seg data results ✔
-    create cBio stidy meta files/connect to data files properly ✔
-
-'''
-
 import click
 import hmmcopy
-import gzip
 import pandas as pd
+import remixt
 import yaml
 
-from convert_vcf_to_maf import convert as convert_vcf_to_maf
-from generate_outputs import extract, transform, load
+from convert_vcf_to_maf import generate_mafs, get_vcf_data, write_allele_counts, write_vcf
 from merge_outputs import merge_all_data as merge_outputs
 from os import path
 from pathlib import Path
+from shutil import copyfile
+from utils import add_counts_to_maf, filter_vcfs
 
 
-def create_study(study_info, path_to_output_study):
-    '''
-    prerequisites:
-    data_CNA.txt, data_cna_hg19.seg, data_mutations_extended.maf exist
-    (in path_to_output_study)
-
-    Please see cbioportal/docs/File-Formats.md on GitHub for examples
-    '''
-    
+def create_study_metadata(study_info, path_to_output_study):
     type_of_cancer = study_info['type_of_cancer']
     cancer_study_identifier = study_info['cancer_study_identifier']
     name = study_info['name']
@@ -90,8 +69,8 @@ def create_study(study_info, path_to_output_study):
                     + 'PATIENT_ID\tSAMPLE_ID\tCANCER_TYPE\n')
     
     case_list_ids = []
-    for patient, doc in study_info['patients'].items():
-        for sample, _ in doc.items():
+    for patient, patient_data in study_info['patients'].items():
+        for sample, _ in patient_data.items():
             data_clinical_sample.write(patient + '\t' + sample + '\t' + type_of_cancer.upper() + '\n')
             case_list_ids.append(sample)
     
@@ -126,102 +105,7 @@ def create_study(study_info, path_to_output_study):
     for file in [cases_cna, cases_cnaseq, cases_sequenced]:
         file.write(case_list_ids[-1] + '\n')
 
-
-def generate_outputs(gtf_file, hgnc_file, titan_igv, titan_segs, sample_id, output_dir): 
-    extracted_file = extract(gtf_file, hgnc_file, titan_igv, titan_segs)
-    gene_dict, seg_dict = transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
-    load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
-
-
-def filter_vcfs(sample_id, museq_vcf, strelka_vcf, work_dir):
-    '''
-    original code by Diljot Grewal
-
-    museq_paired and strekla_snv,
-    take position intersection plus probability filter of 0.85
-    (keep positions >= 0.85 that are in both)
-
-    modifications: take museq and strelka directly as input, output
-    to temp_dir, take sample id as input and append to output
-    filtered filename
-    '''
-
-    museq_filtered = work_dir + '{}_museq_filtered.vcf.gz'.format(sample_id)
-
-    strelka_ref = set()
-
-    with gzip.open(strelka_vcf, 'rt') as strelka_data:
-        for line in strelka_data:
-            if line.startswith('#'):
-                continue
-
-            line = line.strip().split()
-            
-            chrom = line[0]
-            pos = line[1]
-            
-            strelka_ref.add((chrom, pos))
-
-    with gzip.open(museq_vcf, 'rt') as museq_data, gzip.open(museq_filtered, 'wt') as museqout:
-        for line in museq_data:
-            if line.startswith('#'):
-                museqout.write(line)
-                continue
-            
-            line = line.strip().split()
-            chrom = line[0]
-            pos = line[1]
-            
-            if ((chrom, pos))  not in strelka_ref:
-                continue
-            
-            pr = line[7].split(';')[0].split('=')[1]
-            if float(pr) < 0.85:
-                continue
-            
-            outstr = '\t'.join(line)+'\n'
-            museqout.write(outstr)
-
-    return museq_filtered
-
-
-def merge_hmmcopy(hmmcopy_files, temp_dir):
-    final_df = pd.read_csv(hmmcopy_files.pop(0), dtype=object)
-    
-    for file in hmmcopy_files:
-        df = pd.read_csv(file, dtype=object)
-        final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
-    
-    final_df.to_csv(temp_dir + 'hmmcopy_csv', index=None)
-
-
-def calculate_counts(counts_files, patient_id, sample_id, temp_dir):
-    usecols = ['chrom','coord','ref','alt', 'ref_counts', 'alt_counts']
-    final_df = pd.DataFrame(columns=usecols)
-    for counts_file in counts_files:
-        for df in pd.read_csv(counts_file, chunksize=1e6, usecols=usecols):
-            final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
-            final_df = final_df.groupby(['chrom','coord','ref','alt'], as_index=False).agg('sum')
-
-    final_df = final_df.rename(columns={'ref_counts': 't_ref_count', 'alt_counts': 't_alt_count'})
-    final_df.to_csv(temp_dir + sample_id + '_tumour_counts.csv', index=None, sep='\t')
-
-
-def add_counts_to_maf(patient_id, sample_id, temp_dir):
-    n_counts = pd.read_csv(temp_dir + sample_id + '.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
-    
-    maf = pd.read_csv(temp_dir + sample_id + '.maf', dtype=object, sep='\t', skiprows=1)
-    maf = maf.drop(columns=['n_ref_count', 'n_alt_count'])
-    maf = maf.merge(n_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
-    
-    if path.exists(temp_dir + sample_id + '_tumour_counts.csv'):
-        t_counts = pd.read_csv(temp_dir + sample_id + '_tumour_counts.csv', dtype=object, sep='\t').rename(columns={'chrom': 'Chromosome', 'coord': 'Start_Position', 'ref': 'Reference_Allele', 'alt': 'Tumor_Seq_Allele2'})
-        maf = maf.drop(columns=['t_ref_count', 't_alt_count'])
-        maf = maf.merge(t_counts, on=['Chromosome', 'Start_Position', 'Reference_Allele', 'Tumor_Seq_Allele2'], how='left')
-    
-    maf.to_csv(temp_dir + sample_id + '-generated.maf', index=None, sep='\t')
-
-
+        
 @click.command()
 @click.argument('input_yaml')
 @click.argument('path_to_output_study')
@@ -239,60 +123,109 @@ def main(input_yaml, path_to_output_study, temp_dir):
         yaml_file = yaml.full_load(file)
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
+        vcf_files = {}
         
-        create_study(yaml_file, path_to_output_study)
+        create_study_metadata(yaml_file, path_to_output_study)
+        genes = remixt.read_gene_data(gtf_file)
 
-        for patient_id, _ in yaml_file['patients'].items():
-            for sample, doc in yaml_file['patients'][patient_id].items():
-                if doc['datatype'] == 'WGS':
-                    if 'museq_vcf' in doc and 'strelka_vcf' in doc:
-                        museq_filtered = filter_vcfs(sample, doc['museq_vcf'], doc['strelka_vcf'], temp_dir)
-                        dataset_id = f'{patient_id}-{sample}-snvs'
-                        convert_vcf_to_maf(museq_filtered, sample, dataset_id, temp_dir)
+        cn_data = {}
+        stats_data = []
+        for patient_id, patient_data in yaml_file['patients'].items():
+            for sample, sample_data in patient_data.items():
+                if sample_data['datatype'] == 'WGS':
+                    if 'maf' not in sample_data:
+                        vcf_files[sample] = []
 
-                    dataset_id = f'{patient_id}-{sample}-indels'
-                    
-                    if 'strelka_indel_vcf' in doc:
-                        convert_vcf_to_maf(doc['strelka_indel_vcf'], sample, dataset_id, temp_dir)
+                        if 'museq_vcf' in sample_data and 'strelka_vcf' in sample_data:
+                            museq_filtered = filter_vcfs(sample, sample_data['museq_vcf'], sample_data['strelka_vcf'], temp_dir)
+                            vcf_files[sample].append(museq_filtered)
+                        
+                        if 'strelka_indel_vcf' in sample_data:
+                            vcf_files[sample].append(sample_data['strelka_indel_vcf'])
 
-                    with gzip.open(doc['titan_segs'], 'rt') as titan_segs:
-                        generate_outputs(gtf_file, hgnc_file, doc['titan_igv'], titan_segs, sample, temp_dir)        
+                    else:
+                        copyfile(sample_data['maf'], temp_dir + sample + '.maf')
+                        maf = pd.read_csv(temp_dir + sample + '.maf', dtype=str, sep='\t', skiprows=1)
+                        maf['Tumor_Sample_Barcode'] = sample
+                        maf.to_csv(temp_dir + sample + '.maf', index=None, sep='\t')
 
-                elif doc['datatype'] == 'SCWGS':
+                    if 'remixt' in sample_data:
+                        cn, stats = remixt.process_sample(sample, sample_data)
+                        cn_data[sample] = cn
+                        stats_data.append(stats)
+
+                elif sample_data['datatype'] == 'SCWGS':
                     hmmcopy_list = []
                     snv_counts = []
+                    vcf_files[sample] = []
 
-                    for library_id, doc in yaml_file['patients'][patient_id][sample].items():
+                    for library_id, library_data in sample_data.items():
                         if library_id == 'datatype':
                             continue
-                        
-                        hmmcopy_list.append(doc['hmmcopy_csv'])  
-                        if 'snv_counts_csv' in doc:
-                            snv_counts.append(doc['snv_counts_csv'])
 
-                    merge_hmmcopy(hmmcopy_list, temp_dir)
+                        if 'museq_vcf' in library_data:
+                            vcf_files[sample].append(library_data['museq_vcf'])
+                        
+                        if 'strelka_vcf' in library_data:
+                            vcf_files[sample].append(library_data['strelka_vcf'])
+                        
+                        if 'strelka_indel_vcf' in library_data:
+                            vcf_files[sample].append(library_data['strelka_indel_vcf'])
+
+                        hmmcopy_list.append(library_data['hmmcopy_csv'])  
+                        
+                        if 'snv_counts_csv' in library_data:
+                            snv_counts.append(library_data['snv_counts_csv'])
+
+                    hmmcopy.merge_csv(hmmcopy_list, temp_dir)
+                    
                     if snv_counts:
-                        calculate_counts(snv_counts, patient_id, sample, temp_dir)
-                        t_file = Path(temp_dir + sample + '_tumour_counts.csv')
+                        hmmcopy.calculate_counts(snv_counts, sample, temp_dir)
                     
                     cnv = hmmcopy.read_copy_data(temp_dir + 'hmmcopy_csv', filter_normal=False)
-                    genes = hmmcopy.read_gene_data(gtf_file)
+                    hmmcopy_genes = hmmcopy.read_gene_data(gtf_file)
                     
-                    overlapping = hmmcopy.calculate_gene_copy(cnv, genes)
+                    overlapping = hmmcopy.calculate_gene_copy(cnv, hmmcopy_genes)
                     hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
 
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
-                    gene_dict, seg_dict = transform(hmmcopy_extract, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False)
-                    load(gene_dict, seg_dict, sample, temp_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False)
-                    
-                    n_file = Path(temp_dir + sample + '.csv')
-                    
-                    maf = Path(temp_dir + sample + '.maf')
-                    if n_file.is_file() and maf.is_file():
-                        add_counts_to_maf(patient_id, sample, temp_dir)
+                    gene_dict, seg_dict = hmmcopy.transform(hmmcopy_extract)
+                    hmmcopy.load(gene_dict, seg_dict, sample, temp_dir)
 
                 else:
-                    raise ValueError(f'unrecognized data type {doc["datatype"]}')
+                    raise ValueError(f'unrecognized data type {sample_data["datatype"]}')
+        
+        if stats_data:
+            stats_data = remixt.clean_up_stats(stats_data)
+
+        if cn_data:
+            aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
+            genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, genes)
+            amp_data = remixt.generate_amp(genes_cn_data, stats_data, genes)
+            hdel_data = remixt.generate_hdel(genes_cn_data, genes)
+
+            remixt.generate_gistic_outputs(amp_data, hdel_data, temp_dir, hgnc_file)
+            remixt.generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data)
+
+        if vcf_files:
+            vcf_outputs = {sample: path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
+            csv_outputs = {sample: path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
+            maf_outputs = {sample: path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
+
+            for sample, sample_vcf_files in vcf_files.items():
+                vcfdata = get_vcf_data(sample_vcf_files)
+                write_vcf(vcf_outputs[sample], sample_vcf_files, vcfdata, temp_dir, sample)
+                write_allele_counts(csv_outputs[sample], vcfdata)
+
+            generate_mafs(vcf_files, temp_dir, maf_outputs, vcf_outputs)
+
+        for patient_id, patient_data in yaml_file['patients'].items():
+            for sample, _ in patient_data.items():
+                n_file = Path(temp_dir + sample + '.csv')
+            
+                maf = Path(temp_dir + sample + '.maf')
+                if n_file.is_file() and maf.is_file():
+                    add_counts_to_maf(sample, temp_dir)
 
     merge_outputs(temp_dir, path_to_output_study)
 

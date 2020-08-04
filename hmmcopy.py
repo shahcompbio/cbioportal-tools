@@ -1,7 +1,10 @@
 import csv
+import logging
 import pandas as pd
 import numpy as np
 
+from scipy.stats import norm
+from utils import hgnc_lookup
 
 autosomes = [str(a) for a in range(1, 23)]
 
@@ -99,19 +102,6 @@ def calculate_gene_copy(cnv, genes):
     return data
 
 
-def test_calculate_gene_copy():
-    # Create some cnv data
-    cnv = pd.DataFrame([{'chr': 'Y', 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0}])
-
-    # Create some gene data
-    genes = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825}])
-
-    # Create known overlap
-    overlapping = pd.DataFrame([{'chr': 'Y', 'gene_id': 'ENSG00000012817', 'gene_start': 21865751, 'gene_end': 21906825, 'start': 1, 'end': 59500000, 'width': 59500000, 'copy': 0.0657638, 'reads': 58774, 'state': 0, }])
-
-    assert overlapping.equals(calculate_gene_copy(cnv, genes))
-
-
 def read_copy_data(bins_filename, filter_normal=False):
     """ Read hmmcopy data, filter normal cells and aggregate into segments
     """
@@ -173,27 +163,19 @@ def read_gene_data(gtf):
 
 def convert_to_transform_format(data, hgnc, temp_dir):
     """Hacky way to get data generated
-    """
-    hgnc_file = open(hgnc, 'r')
-    next(hgnc_file)
-    hgnc_reader = csv.reader(hgnc_file, delimiter='\t')
-    hgnc_dict = {}
-    for hgnc_line in hgnc_reader:
-        if len(hgnc_line) == 3:
-            hgnc_dict[hgnc_line[2]] = (hgnc_line[0], hgnc_line[1])
-
-    data['hugo_symbol'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[0])
-    data['entrez_id'] = data['gene_id'].apply(lambda row: hgnc_dict.get(row, ('', ''))[1])
+    """ 
+    data = hgnc_lookup(data, hgnc)
     data['median_logr'] = np.log2(data['copy'] / 2)
     data['median_logr'] = data['median_logr'].fillna(np.exp(-8))
     data['num.mark'] = (data['width'] / 500000).astype(int)
 
-    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end'})
+    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end', 'Hugo_Symbol': 'hugo_symbol', 'Entrez_Gene_Id': 'entrez_id'})
     data['placeholder'] = 0
     data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
     data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
     data.loc[data['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
 
+    # Fix seg ends to align with cBioPortal specifications
     data.loc[(data['chr'] == '1') & (data['seg_end'] == 249500000), 'seg_end'] = 249250621
     data.loc[(data['chr'] == '2') & (data['seg_end'] == 243500000), 'seg_end'] = 243199373
     data.loc[(data['chr'] == '3') & (data['seg_end'] == 198500000), 'seg_end'] = 198022430
@@ -222,10 +204,220 @@ def convert_to_transform_format(data, hgnc, temp_dir):
     data.to_csv(temp_dir + 'hmmcopy_extract', index=None, sep='\t')
 
 
-# Testing
-def main():
-    test_calculate_gene_copy()
+def merge_csv(hmmcopy_files, temp_dir):
+    final_df = pd.read_csv(hmmcopy_files.pop(0), dtype=object)
+    
+    for file in hmmcopy_files:
+        df = pd.read_csv(file, dtype=object)
+        final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+    
+    final_df.to_csv(temp_dir + 'hmmcopy_csv', index=None)
 
 
-if __name__ == '__main__':
-    main()
+def calculate_counts(counts_files, sample_id, temp_dir):
+    usecols = ['chrom','coord','ref','alt', 'ref_counts', 'alt_counts']
+    final_df = pd.DataFrame(columns=usecols)
+    
+    for counts_file in counts_files:
+        for df in pd.read_csv(counts_file, chunksize=1e6, usecols=usecols):
+            final_df = pd.concat([df, final_df], axis=0, ignore_index=True)
+            final_df = final_df.groupby(['chrom','coord','ref','alt'], as_index=False).agg('sum')
+
+    final_df = final_df.rename(columns={'ref_counts': 't_ref_count', 'alt_counts': 't_alt_count'})
+    final_df.to_csv(temp_dir + sample_id + '_tumour_counts.csv', index=None, sep='\t')
+
+
+def calculate_weighted_average(ensembl_dict, column_to_use):
+    calculated_values = {}
+    for ensembl_id in ensembl_dict:
+        # find start and end points for all the segments gene is in
+        seg_starts = [start for start in ensembl_dict[ensembl_id][0]]
+        seg_ends = [end for end in ensembl_dict[ensembl_id][1]]
+        values_to_use = [val for val in column_to_use[ensembl_id]]
+        segs_to_remove = []
+        
+        # if ensembl_id gene is only present in one segment, add
+        # associated copy number to calculated_values
+        if len(seg_starts) == 1:
+            calculated_values[ensembl_id] = values_to_use[0]
+            continue
+
+        gene_start = ensembl_dict[ensembl_id][4]
+        gene_end = ensembl_dict[ensembl_id][5]
+        
+        denominator_start = (min(seg_ends) - gene_start) / (min(seg_ends) - min(seg_starts))
+        denominator_end = ((max(seg_ends) - max(seg_starts)) - (max(seg_ends) - gene_end)) / (max(seg_ends) - max(seg_starts))
+        numerator_start = denominator_start * values_to_use[seg_starts.index(min(seg_starts))] 
+        numerator_end = denominator_end * values_to_use[seg_starts.index(max(seg_starts))]
+        
+        # remove calculation values from used segs
+        values_to_remove = [values_to_use[seg_starts.index(min(seg_starts))], values_to_use[seg_starts.index(max(seg_starts))]]
+        for value in values_to_remove:
+            values_to_use.remove(value)
+        
+        # remove min and max segment start and end coordinates
+        # this is to easily iterate over remaining segments
+        seg_starts.remove(min(seg_starts)), seg_starts.remove(max(seg_starts))
+        seg_ends.remove(min(seg_ends)), seg_ends.remove(max(seg_ends))
+        
+        # determine remaining required information for calculation
+        denominator_rest = 1 * len(seg_starts)
+        numerator_rest = 0  
+        for value in seg_starts:
+            numerator_rest = numerator_rest + values_to_use[seg_starts.index(value)]
+
+        # perform final weighted average calculation
+        calculated_values[ensembl_id] = (numerator_start + numerator_rest + numerator_end) / (denominator_start + denominator_rest + denominator_end)
+
+    return calculated_values
+
+
+def transform(extracted_file, show_missing_hugo=False, show_missing_entrez=False, show_missing_both=False):
+    '''
+    perform weighted average calculations, and transformations
+    
+    ensembl_dict will store information for calculations
+    gene_dict will store information for gene data output
+    seg_dict will store information for segment data output
+    '''
+    
+    ensembl_dict, gene_dict, seg_dict  = {}, {}, {}
+    homd_segs, missing_hugo_symbol, missing_entrez_id, missing_both = [], [], [], []
+    next(extracted_file)
+    file_reader = csv.reader(extracted_file, delimiter='\t')
+    for line in file_reader:    
+        # if line has an associated ensembl_id and
+        # segment doesn't have a length of zero
+        if line[7] and line[1] != line[2]:
+            # if gene is missing hugo_symbol or entrez_id
+            if line[8] != '' or line[9] != '':
+                if line[8] == '':
+                    missing_hugo_symbol.append(line[7])
+                if line[9] == '':
+                    missing_entrez_id.append(line[7])
+                
+                # ensembl_id: [entrez_id, hugo_symbol]
+                gene_dict[line[7]] = [line[9], line[8]]
+                
+                # set up a key-value pair where the key is
+                # an ensembl id and the value is a list containing
+                # the associated segment start points, end points,
+                # copy numbers, titan states, gene start point, and
+                # gene end point
+                if line[7] not in ensembl_dict:
+                    ensembl_dict[line[7]] = [[], [], [], [], 0, 0]
+                try:
+                    ensembl_dict[line[7]][0].append(int(line[1]))
+                except:
+                    raise Exception(line)
+                ensembl_dict[line[7]][1].append(int(line[2]))
+                ensembl_dict[line[7]][2].append(int(line[3]))
+                ensembl_dict[line[7]][3].append(int(line[4]))
+                ensembl_dict[line[7]][4] = int(line[10])
+                ensembl_dict[line[7]][5] = int(line[11])
+
+            # if gene is missing hugo_symbol and entrez_id
+            if line[8] == '' and line[9] == '':
+                missing_both.append(line[7])
+
+        # (seg_start, seg_end): [chr, num.mark, titan_state, median_logr]
+        seg_dict[(line[1], line[2])] = [line[0], line[5], line[4], line[6]]
+
+    copy_numbers = {}
+    for ensembl_id in ensembl_dict:
+        # key: ensembl_id, value: associated copy number(s)
+        copy_numbers[ensembl_id] = ensembl_dict[ensembl_id][2]
+
+    calculated_cns = calculate_weighted_average(ensembl_dict, copy_numbers)
+    
+    titan_states = {}
+    for ensembl_id in ensembl_dict:
+        # key: ensembl_id, value: associated titan state(s)
+        titan_states[ensembl_id] = ensembl_dict[ensembl_id][3]
+
+    calculated_tss = calculate_weighted_average(ensembl_dict, titan_states)
+
+    for ensembl_id in calculated_cns:
+        # append weighted average of calculated copy number and
+        # titan state, for each ensembl_id
+        gene_dict[ensembl_id].append(str(calculated_cns[ensembl_id]))
+        # remember to round to nearest integer for integer data
+        gene_dict[ensembl_id].append(str(round(calculated_tss[ensembl_id])))
+
+    # create a baseline (mu) for gene copy number transformation
+    calc_cn_list = [calculated_cns[key] for key in calculated_cns]
+    mu, _ = norm.fit(calc_cn_list)
+
+    # perform required gene transformations on copy number
+    for ensembl_id in calculated_cns:
+        cn = calculated_cns[ensembl_id]
+        
+        if cn < 1:
+            gene_dict[ensembl_id][2] = '-2'
+            if cn < 0:
+                logging.warning(f'{ensembl_id} has a calculated cn value lesser than 0')
+        elif 1 <= cn <= mu-1:
+            gene_dict[ensembl_id][2] = '-1'
+        elif mu-1 < cn < mu+1:
+            gene_dict[ensembl_id][2] = '0'
+        elif mu+1 <= cn < 6:
+            gene_dict[ensembl_id][2] = '1'
+        elif cn >= 6:
+            gene_dict[ensembl_id][2] = '2'
+
+    if show_missing_hugo:
+        print('Ensembl IDs missing HUGO symbols:')
+        print(missing_hugo_symbol)
+    if show_missing_entrez:
+        print('Ensembl IDs missing Entrez IDs:')
+        print(missing_entrez_id)
+    if show_missing_both:
+        print('Ensembl IDs missing both HUGO symbols and Entrez IDs:')
+        print(missing_both, '\n')
+    
+    return gene_dict, seg_dict
+
+
+def load(gene_dict, seg_dict, sample_id, output_dir, output_gistic_gene=True, output_integer_gene=False, output_log_seg=True, output_integer_seg=False):
+    '''
+    split generated file into four outputs
+
+    gene_dict contains key-value pairs of
+    ensembl_id:
+    [entrez_id, hugo_symbol, transformed_calc_cn, calc_titan_state]
+    
+    seg_dict contains key-value pairs of
+    (seg_start, seg_end):
+    [chr, num.mark, titan_state, median_logr]
+    '''
+    
+    gene_header = 'Hugo_Symbol\tEntrez_Gene_Id\t' + sample_id + '\n'
+    segment_header = 'ID\tchrom\tloc.start\tloc.end\tnum.mark\tseg.mean\n'
+    
+    if output_gistic_gene:
+        gistic_gene_data = open(output_dir + sample_id + '_gistic_gene_data.txt', 'w+')
+        gistic_gene_data.write(gene_header)
+        
+        for ensembl_id in gene_dict:
+            gistic_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][2] + '\n')
+    
+    if output_integer_gene:
+        integer_gene_data = open(output_dir + sample_id + '_integer_gene_data.txt', 'w+')
+        integer_gene_data.write(gene_header)
+
+        for ensembl_id in gene_dict:
+            integer_gene_data.write(gene_dict[ensembl_id][1] + '\t' + gene_dict[ensembl_id][0] + '\t' + gene_dict[ensembl_id][3] + '\n')
+    
+    if output_log_seg:
+        log_seg_data = open(output_dir + sample_id + '_log_seg_data.seg', 'w+')
+        log_seg_data.write(segment_header)
+
+        for seg_length in seg_dict:
+            log_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][3] + '\n')
+    
+    if output_integer_seg:
+        integer_seg_data = open(output_dir + sample_id + '_integer_seg_data.seg', 'w+')
+        integer_seg_data.write(segment_header)
+
+        for seg_length in seg_dict:
+            integer_seg_data.write(sample_id + '\t' + seg_dict[seg_length][0] + '\t' + seg_length[0] + '\t' + seg_length[1] + '\t' + seg_dict[seg_length][1] + '\t' + seg_dict[seg_length][2] + '\n')
