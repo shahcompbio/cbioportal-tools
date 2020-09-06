@@ -3,6 +3,7 @@ import hmmcopy
 import pandas as pd
 import remixt
 import yaml
+import logging
 
 from convert_vcf_to_maf import generate_mafs, get_vcf_data, write_allele_counts, write_vcf
 from merge_outputs import merge_all_data as merge_outputs
@@ -11,6 +12,7 @@ from pathlib import Path
 from shutil import copyfile
 from utils import add_counts_to_maf, filter_vcfs
 
+LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 def create_study_metadata(study_info, path_to_output_study):
     type_of_cancer = study_info['type_of_cancer']
@@ -125,13 +127,19 @@ def main(input_yaml, path_to_output_study, temp_dir):
         gtf_file = yaml_file['gtf']
         vcf_files = {}
         
+        logging.info('creating study metadata')
         create_study_metadata(yaml_file, path_to_output_study)
+
+        logging.info('reading gtf')
         genes = remixt.read_gene_data(gtf_file)
 
+        logging.info('processing patients')
         cn_data = {}
         stats_data = []
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, sample_data in patient_data.items():
+                logging.info(f'processing patient {patient_id}, sample {sample_id}')
+
                 if sample_data['datatype'] == 'WGS':
                     if 'maf' not in sample_data:
                         vcf_files[sample] = []
@@ -199,6 +207,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
             stats_data = remixt.clean_up_stats(stats_data)
 
         if cn_data:
+            logging.info('generating cn matrices')
+
             aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
             genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, genes)
             amp_data = remixt.generate_amp(genes_cn_data, stats_data, genes)
@@ -208,6 +218,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
             remixt.generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data)
 
         if vcf_files:
+            logging.info('generating mafs')
+
             vcf_outputs = {sample: path.join(temp_dir, '{}.vcf'.format(sample)) for sample in vcf_files}
             csv_outputs = {sample: path.join(temp_dir, '{}.csv'.format(sample)) for sample in vcf_files}
             maf_outputs = {sample: path.join(temp_dir, '{}.maf'.format(sample)) for sample in vcf_files}
@@ -219,6 +231,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
 
             generate_mafs(vcf_files, temp_dir, maf_outputs, vcf_outputs)
 
+        logging.info('adding counts to mafs')
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, _ in patient_data.items():
                 n_file = Path(temp_dir + sample + '.csv')
@@ -227,8 +240,10 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 if n_file.is_file() and maf.is_file():
                     add_counts_to_maf(sample, temp_dir)
 
+    logging.info('merging patient data')
     merge_outputs(temp_dir, path_to_output_study)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(format=LOGGING_FORMAT, stream=sys.stderr, level=logging.INFO)
     main()
