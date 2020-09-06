@@ -126,6 +126,8 @@ def main(input_yaml, path_to_output_study, temp_dir):
         hgnc_file = yaml_file['id_mapping']
         gtf_file = yaml_file['gtf']
         vcf_files = {}
+        gistic_files = {}
+        seg_files = {}
         
         logging.info('creating study metadata')
         create_study_metadata(yaml_file, path_to_output_study)
@@ -134,8 +136,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
         genes = remixt.read_gene_data(gtf_file)
 
         logging.info('processing patients')
-        cn_data = {}
-        stats_data = []
         for patient_id, patient_data in yaml_file['patients'].items():
             for sample, sample_data in patient_data.items():
                 logging.info(f'processing patient {patient_id}, sample {sample_id}')
@@ -158,9 +158,18 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         maf.to_csv(temp_dir + sample + '.maf', index=None, sep='\t')
 
                     if 'remixt' in sample_data:
-                        cn, stats = remixt.process_sample(sample, sample_data)
-                        cn_data[sample] = cn
-                        stats_data.append(stats)
+                        cn_data, stats = remixt.load_data(sample, sample_data)
+                        aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
+                        genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, genes)
+                        stats_data = remixt.clean_up_stats(stats_data)
+                        amp_data = remixt.generate_amp(genes_cn_data, stats_data, genes)
+                        hdel_data = remixt.generate_hdel(genes_cn_data, genes)
+
+                        gistic_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.gistic')
+                        seg_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.segs')
+
+                        remixt.generate_gistic_outputs(gistic_files[sample], amp_data, hdel_data, hgnc_file)
+                        remixt.generate_seg_outputs(seg_files[sample], aggregated_cn_data, stats_data)
 
                 elif sample_data['datatype'] == 'SCWGS':
                     hmmcopy_list = []
@@ -203,20 +212,6 @@ def main(input_yaml, path_to_output_study, temp_dir):
                 else:
                     raise ValueError(f'unrecognized data type {sample_data["datatype"]}')
         
-        if stats_data:
-            stats_data = remixt.clean_up_stats(stats_data)
-
-        if cn_data:
-            logging.info('generating cn matrices')
-
-            aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
-            genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, genes)
-            amp_data = remixt.generate_amp(genes_cn_data, stats_data, genes)
-            hdel_data = remixt.generate_hdel(genes_cn_data, genes)
-
-            remixt.generate_gistic_outputs(amp_data, hdel_data, temp_dir, hgnc_file)
-            remixt.generate_seg_outputs(aggregated_cn_data, temp_dir, stats_data)
-
         if vcf_files:
             logging.info('generating mafs')
 

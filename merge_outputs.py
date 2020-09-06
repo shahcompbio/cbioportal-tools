@@ -88,8 +88,6 @@ def merge_maf_data(input_dir, output_dir):
 
 
 def merge_all_data(input_dir, output_dir):
-    merge_gistic_gene_data(input_dir, output_dir)
-    merge_log_seg_data(input_dir, output_dir)
     merge_maf_data(input_dir, output_dir)
 
 
