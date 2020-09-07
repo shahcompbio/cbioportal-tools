@@ -1,3 +1,5 @@
+import os
+import sys
 import click
 import hmmcopy
 import pandas as pd
@@ -125,7 +127,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         input_info = yaml.full_load(f)
 
         gene_locations_filename = input_info.get('gene_locations', 'gene_data/gene_locations.csv.gz')
-        gene_locations = pd.read_scsv(gene_locations_filename)
+        gene_locations = pd.read_csv(gene_locations_filename)
 
         vcf_files = {}
         gistic_files = {}
@@ -137,7 +139,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
         logging.info('processing patients')
         for patient_id, patient_data in input_info['patients'].items():
             for sample, sample_data in patient_data.items():
-                logging.info(f'processing patient {patient_id}, sample {sample_id}')
+                logging.info(f'processing patient {patient_id}, sample {sample}')
 
                 if sample_data['datatype'] == 'WGS':
                     if 'maf' not in sample_data:
@@ -157,12 +159,15 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         maf.to_csv(temp_dir + sample + '.maf', index=None, sep='\t')
 
                     if 'remixt' in sample_data:
-                        cn_data, stats = remixt.load_data(sample, sample_data)
+                        cn_data, stats_data = remixt.load_data(sample, sample_data)
                         aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
                         genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, gene_locations)
-                        stats_data = remixt.clean_up_stats(stats_data)
                         amp_data = remixt.generate_amp(genes_cn_data, stats_data, gene_locations)
                         hdel_data = remixt.generate_hdel(genes_cn_data, gene_locations)
+
+                        amp_data['sample'] = sample
+                        hdel_data['sample'] = sample
+                        aggregated_cn_data['sample'] = sample
 
                         gistic_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.gistic')
                         seg_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.segs')
