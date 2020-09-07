@@ -104,8 +104,8 @@ def create_study_metadata(study_info, path_to_output_study):
         cases_cnaseq.write(sample_id + '\t')
         cases_sequenced.write(sample_id + '\t')
     
-    for file in [cases_cna, cases_cnaseq, cases_sequenced]:
-        file.write(case_list_ids[-1] + '\n')
+    for f in [cases_cna, cases_cnaseq, cases_sequenced]:
+        f.write(case_list_ids[-1] + '\n')
 
         
 @click.command()
@@ -121,22 +121,21 @@ def main(input_yaml, path_to_output_study, temp_dir):
     Path(path_to_output_study).mkdir(parents=True, exist_ok=True)
     Path(temp_dir).mkdir(parents=True, exist_ok=True)
 
-    with open(input_yaml) as file:
-        yaml_file = yaml.full_load(file)
-        hgnc_file = yaml_file['id_mapping']
-        gtf_file = yaml_file['gtf']
+    with open(input_yaml) as f:
+        input_info = yaml.full_load(f)
+
+        gene_locations_filename = input_info.get('gene_locations', 'gene_data/gene_locations.csv.gz')
+        gene_locations = pd.read_scsv(gene_locations_filename)
+
         vcf_files = {}
         gistic_files = {}
         seg_files = {}
         
         logging.info('creating study metadata')
-        create_study_metadata(yaml_file, path_to_output_study)
-
-        logging.info('reading gtf')
-        genes = remixt.read_gene_data(gtf_file)
+        create_study_metadata(input_info, path_to_output_study)
 
         logging.info('processing patients')
-        for patient_id, patient_data in yaml_file['patients'].items():
+        for patient_id, patient_data in input_info['patients'].items():
             for sample, sample_data in patient_data.items():
                 logging.info(f'processing patient {patient_id}, sample {sample_id}')
 
@@ -160,15 +159,15 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     if 'remixt' in sample_data:
                         cn_data, stats = remixt.load_data(sample, sample_data)
                         aggregated_cn_data = remixt.generate_aggregated_cn(cn_data)
-                        genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, genes)
+                        genes_cn_data = remixt.generate_genes_cn(aggregated_cn_data, gene_locations)
                         stats_data = remixt.clean_up_stats(stats_data)
-                        amp_data = remixt.generate_amp(genes_cn_data, stats_data, genes)
-                        hdel_data = remixt.generate_hdel(genes_cn_data, genes)
+                        amp_data = remixt.generate_amp(genes_cn_data, stats_data, gene_locations)
+                        hdel_data = remixt.generate_hdel(genes_cn_data, gene_locations)
 
                         gistic_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.gistic')
                         seg_files[sample] = os.path.join(temp_dir, f'{patient_id}_{sample}.segs')
 
-                        remixt.generate_gistic_outputs(gistic_files[sample], amp_data, hdel_data, hgnc_file)
+                        remixt.generate_gistic_outputs(gistic_files[sample], amp_data, hdel_data)
                         remixt.generate_seg_outputs(seg_files[sample], aggregated_cn_data, stats_data)
 
                 elif sample_data['datatype'] == 'SCWGS':
@@ -200,10 +199,9 @@ def main(input_yaml, path_to_output_study, temp_dir):
                         hmmcopy.calculate_counts(snv_counts, sample, temp_dir)
                     
                     cnv = hmmcopy.read_copy_data(temp_dir + 'hmmcopy_csv', filter_normal=False)
-                    hmmcopy_genes = hmmcopy.read_gene_data(gtf_file)
                     
-                    overlapping = hmmcopy.calculate_gene_copy(cnv, hmmcopy_genes)
-                    hmmcopy.convert_to_transform_format(overlapping, hgnc_file, temp_dir)
+                    overlapping = hmmcopy.calculate_gene_copy(cnv, gene_locations)
+                    hmmcopy.convert_to_transform_format(overlapping, temp_dir)
 
                     hmmcopy_extract = open(temp_dir + 'hmmcopy_extract', 'r')
                     gene_dict, seg_dict = hmmcopy.transform(hmmcopy_extract)
@@ -227,7 +225,7 @@ def main(input_yaml, path_to_output_study, temp_dir):
             generate_mafs(vcf_files, temp_dir, maf_outputs, vcf_outputs)
 
         logging.info('adding counts to mafs')
-        for patient_id, patient_data in yaml_file['patients'].items():
+        for patient_id, patient_data in input_info['patients'].items():
             for sample, _ in patient_data.items():
                 n_file = Path(temp_dir + sample + '.csv')
             
