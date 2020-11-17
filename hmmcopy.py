@@ -81,10 +81,12 @@ def calculate_gene_copy(cnv, genes):
 
     """
     data = []
-
+    print("cnv", cnv)
+    print("genes", genes)
     for chr in cnv['chr'].unique():
         chr_cnv = cnv[cnv['chr'] == chr]
-        chr_genes = genes[genes['chr'] == chr]
+        # chr_genes = genes[genes['chr'] == chr]
+        chr_genes = genes[genes['chromosome'] == chr]
 
         # Iterate through segments, calculate overlapping genes
         for idx, row in chr_cnv.iterrows():
@@ -168,9 +170,14 @@ def convert_to_transform_format(data, temp_dir):
     data['median_logr'] = data['median_logr'].fillna(np.exp(-8))
     data['num.mark'] = (data['width'] / 500000).astype(int)
 
-    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end', 'Hugo_Symbol': 'hugo_symbol', 'Entrez_Gene_Id': 'entrez_id'})
+    print("pre", data)
+
+    # data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end', 'Hugo_Symbol': 'hugo_symbol', 'Entrez_Gene_Id': 'entrez_id'})
+    data = data.rename(columns={'start': 'seg_start', 'end': 'seg_end', 'Hugo_Symbol': 'hugo_symbol', 'Entrez_Gene_Id': 'entrez_id', 'chromosome': 'chr'})
+    print("post", data)
     data['placeholder'] = 0
-    data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
+    # data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'gene_id', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
+    data = data[['chr', 'seg_start', 'seg_end', 'state', 'placeholder', 'num.mark', 'median_logr', 'hugo_symbol', 'entrez_id', 'gene_start', 'gene_end']]
     data = data.astype({'seg_start': int, 'seg_end': int, 'state': int})
     data.loc[data['median_logr'] == np.NINF, 'median_logr'] = np.exp(-8)
 

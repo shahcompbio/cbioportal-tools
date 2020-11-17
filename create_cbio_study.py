@@ -181,22 +181,23 @@ def main(input_yaml, path_to_output_study, temp_dir):
                     vcf_files[sample] = []
 
                     for library_id, library_data in sample_data.items():
+                        print(sample_data.items())
                         if library_id == 'datatype':
                             continue
 
-                        if 'museq_vcf' in library_data:
-                            vcf_files[sample].append(library_data['museq_vcf'])
+                        if 'museq_vcf' in library_id:
+                            vcf_files[sample].append(sample_data['museq_vcf'])
                         
-                        if 'strelka_vcf' in library_data:
-                            vcf_files[sample].append(library_data['strelka_vcf'])
+                        if 'strelka_vcf' in library_id:
+                            vcf_files[sample].append(sample_data['strelka_vcf'])
                         
-                        if 'strelka_indel_vcf' in library_data:
-                            vcf_files[sample].append(library_data['strelka_indel_vcf'])
+                        if 'strelka_indel_vcf' in library_id:
+                            vcf_files[sample].append(sample_data['strelka_indel_vcf'])
 
-                        hmmcopy_list.append(library_data['hmmcopy_csv'])  
+                        hmmcopy_list.append(sample_data['hmmcopy_csv'])  
                         
-                        if 'snv_counts_csv' in library_data:
-                            snv_counts.append(library_data['snv_counts_csv'])
+                        if 'snv_counts_csv' in library_id:
+                            snv_counts.append(sample_data['snv_counts_csv'])
 
                     hmmcopy.merge_csv(hmmcopy_list, temp_dir)
                     
