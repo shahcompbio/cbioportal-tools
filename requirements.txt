@@ -7,7 +7,7 @@ cycler==0.10.0
 decorator==4.4.2
 filetype==1.0.7
 idna==2.10
-ipython==7.15.0
+ipython==7.16.3
 ipython-genutils==0.2.0
 jedi==0.17.0
 kiwisolver==1.1.0
